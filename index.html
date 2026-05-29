@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAPEX Sentinel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0e27 0%, #151b3d 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: #e8eef7;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 14, 39, 0.95);
+            border-bottom: 1px solid #2a3456;
+            padding: 16px 12px;
+            margin-bottom: 16px;
+        }
+
+        .header-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #d4af37;
+            letter-spacing: 0.5px;
+        }
+
+        .header p {
+            font-size: 11px;
+            color: #a8b5cc;
+            margin-top: 4px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 12px 100px 12px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a8b5cc;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #2a3456;
+            border-top-color: #d4af37;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .card {
+            background: rgba(42, 52, 86, 0.3);
+            border: 1px solid #2a3456;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 14px;
+        }
+
+        .score-box {
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+            margin-bottom: 12px;
+        }
+
+        .score-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 700;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .score-circle.critical {
+            background: radial-gradient(circle, #ff6666, #cc0000);
+            color: white;
+            box-shadow: 0 0 30px rgba(255, 68, 68, 0.6);
+        }
+
+        .score-circle.warning {
+            background: radial-gradient(circle, #ffd966, #ffb300);
+            color: #1a1a1a;
+            box-shadow: 0 0 30px rgba(255, 193, 7, 0.5);
+        }
+
+        .score-circle.safe {
+            background: radial-gradient(circle, #33ff99, #00cc66);
+            color: #0a0e27;
+            box-shadow: 0 0 30px rgba(0, 208, 132, 0.6);
+        }
+
+        .score-info h2 {
+            font-size: 11px;
+            color: #a8b5cc;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+
+        .score-info p {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .score-info span {
+            font-size: 11px;
+            color: #a8b5cc;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .data-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .data-label {
+            font-size: 10px;
+            color: #a8b5cc;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .data-value {
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 4px;
+        }
+
+        .data-change {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .change-down {
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.15);
+        }
+
+        .change-up {
+            color: #00d084;
+            background: rgba(0, 208, 132, 0.15);
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        .alerts {
+            margin-bottom: 14px;
+        }
+
+        .alert-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #d4af37;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .alert-item {
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid #d4af37;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .alert-item.critical {
+            border-left-color: #ff4444;
+            background: rgba(255, 68, 68, 0.08);
+        }
+
+        .alert-time {
+            font-size: 9px;
+            color: #a8b5cc;
+            margin-top: 4px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 14, 39, 0.95);
+            border-top: 1px solid #2a3456;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            padding: 8px 0;
+        }
+
+        .nav-btn {
+            padding: 10px 0;
+            border: none;
+            background: none;
+            color: #a8b5cc;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: color 0.2s;
+        }
+
+        .nav-btn.active {
+            color: #d4af37;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .update-time {
+            font-size: 10px;
+            color: #a8b5cc;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #2a3456;
+        }
+
+        .setting-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .setting-label {
+            font-size: 10px;
+            color: #a8b5cc;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .setting-value {
+            font-size: 13px;
+            color: #e8eef7;
+            font-family: 'Courier New', monospace;
+        }
+
+        .setting-value.success {
+            color: #00d084;
+        }
+
+        .setting-value.warning {
+            color: #ffc107;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: #a8b5cc;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>⚡ CAPEX SENTINEL</h1>
+            <p>금융 조기경보 터미널 v1.0</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="loading" style="display: block;">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 12px;">데이터 로딩 중...</p>
+            </div>
+        </div>
+
+        <div id="dashboard" class="section">
+            <div class="card">
+                <div class="score-box">
+                    <div id="scoreCircle" class="score-circle safe">0</div>
+                    <div class="score-info">
+                        <h2>위험 수준</h2>
+                        <p id="scoreText">정보 로딩 중</p>
+                        <span id="scoreDesc">-</span>
+                    </div>
+                </div>
+                <div class="update-time">
+                    🔄 <span id="updateTime">-</span>
+                </div>
+            </div>
+
+            <div class="grid" id="dataGrid">
+                <div class="card data-card">
+                    <div class="data-label">TSMC 월 매출</div>
+                    <div class="data-value" id="tsmc">-</div>
+                    <span class="data-change" id="tsmcChange">-</span>
+                </div>
+
+                <div class="card data-card">
+                    <div class="data-label">반도체 수출액</div>
+                    <div class="data-value" id="semicon">-</div>
+                    <span class="data-change" id="semiconChange">-</span>
+                </div>
+
+                <div class="card data-card">
+                    <div class="data-label">USD/JPY 환율</div>
+                    <div class="data-value" id="jpy">-</div>
+                    <span class="data-change" id="jpyChange">-</span>
+                </div>
+
+                <div class="card data-card">
+                    <div class="data-label">Fed 기준금리</div>
+                    <div class="data-value" id="fed">-</div>
+                    <span class="data-change">현황</span>
+                </div>
+
+                <div class="card data-card full">
+                    <div class="data-label">빅테크 CAPEX 트렌드</div>
+                    <div class="data-value" id="capex">-</div>
+                    <span class="data-change" id="capexChange">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="alerts" class="section">
+            <div class="card alerts">
+                <div class="alert-title">🚨 경보 히스토리</div>
+                <div id="alertsList">
+                    <div class="no-data">경보 없음</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="settings" class="section">
+            <div class="card">
+                <div class="setting-item">
+                    <div class="setting-label">시스템 이름</div>
+                    <div class="setting-value">CAPEX Sentinel v1.0</div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">자동 업데이트</div>
+                    <div class="setting-value">매일 오전 6시 UTC (오후 3시 KST)</div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">데이터 폴링</div>
+                    <div class="setting-value">5분 단위</div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">데이터 소스</div>
+                    <div class="setting-value">FRED API + SEC + TSMC + 관세청</div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-label">현재 상태</div>
+                    <div id="statusValue" class="setting-value warning">⏳ data.json 로딩 중...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <button class="nav-btn active" onclick="showTab('dashboard', this)">📊 대시보드</button>
+        <button class="nav-btn" onclick="showTab('alerts', this)">🚨 경보</button>
+        <button class="nav-btn" onclick="showTab('settings', this)">⚙️ 설정</button>
+    </div>
+
+    <script>
+        let appData = null;
+
+        async function loadData() {
+            try {
+                const response = await fetch('data.json?' + Date.now(), { cache: 'no-store' });
+                if (!response.ok) throw new Error('데이터 로드 실패');
+                
+                appData = await response.json();
+                renderUI();
+                scheduleRefresh();
+            } catch (error) {
+                console.error('데이터 로드 오류:', error);
+                document.getElementById('statusValue').textContent = '❌ 데이터 로드 실패';
+                document.getElementById('statusValue').style.color = '#ff4444';
+                setTimeout(loadData, 30000);
+            }
+        }
+
+        function renderUI() {
+            if (!appData) return;
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard').classList.add('active');
+
+            const score = Math.round(appData.risk_score || 0);
+            const comp = appData.components || {};
+
+            let level = 'safe';
+            let levelText = '안전';
+            let levelDesc = '정상 CAPEX 사이클';
+
+            if (score >= 70) {
+                level = 'critical';
+                levelText = '경보';
+                levelDesc = '자산 보호 단계 진입 권고';
+            } else if (score >= 40) {
+                level = 'warning';
+                levelText = '주의';
+                levelDesc = '포지션 축소 검토 필요';
+            }
+
+            document.getElementById('scoreCircle').className = `score-circle ${level}`;
+            document.getElementById('scoreCircle').textContent = score;
+            document.getElementById('scoreText').textContent = levelText;
+            document.getElementById('scoreDesc').textContent = levelDesc;
+            document.getElementById('updateTime').textContent = new Date(appData.timestamp).toLocaleString('ko-KR');
+
+            const tsmc = comp.tsmc_yoy;
+            document.getElementById('tsmc').textContent = tsmc ? tsmc.toFixed(1) + '%' : '-';
+            document.getElementById('tsmcChange').textContent = tsmc && tsmc < 0 ? 'YoY ↓' : 'YoY ↑';
+            document.getElementById('tsmcChange').className = tsmc && tsmc < 0 ? 'data-change change-down' : 'data-change change-up';
+
+            const semicon = comp.korea_semicon_change;
+            document.getElementById('semicon').textContent = comp.korea_semicon_exports ? '$' + (comp.korea_semicon_exports / 1e9).toFixed(2) + 'B' : '-';
+            document.getElementById('semiconChange').textContent = semicon ? semicon.toFixed(1) + '%' : '-';
+            document.getElementById('semiconChange').className = semicon && semicon < 0 ? 'data-change change-down' : 'data-change change-up';
+
+            const jpy = comp.jpy_usd;
+            document.getElementById('jpy').textContent = jpy ? jpy.toFixed(2) : '-';
+            document.getElementById('jpyChange').textContent = jpy && jpy < 145 ? '약세 ↓' : '강세 ↑';
+            document.getElementById('jpyChange').className = jpy && jpy < 145 ? 'data-change change-down' : 'data-change change-up';
+
+            document.getElementById('fed').textContent = comp.fed_rate ? comp.fed_rate.toFixed(2) + '%' : '-';
+
+            const capex = comp.bigtech_capex_trend;
+            document.getElementById('capex').textContent = capex ? capex.toFixed(1) + '%' : '-';
+            document.getElementById('capexChange').textContent = capex && capex < 0 ? '하락 신호' : '확대 신호';
+            document.getElementById('capexChange').className = capex && capex < 0 ? 'data-change change-down' : 'data-change change-up';
+
+            renderAlerts();
+            document.getElementById('statusValue').textContent = '✅ 실제 데이터 연동됨';
+            document.getElementById('statusValue').style.color = '#00d084';
+        }
+
+        function renderAlerts() {
+            const alerts = appData.alerts || [];
+            const alertsList = document.getElementById('alertsList');
+
+            if (alerts.length === 0) {
+                alertsList.innerHTML = '<div class="no-data">최근 경보 없음</div>';
+                return;
+            }
+
+            alertsList.innerHTML = alerts.map(alert => `
+                <div class="alert-item ${alert.level === 'CRITICAL' ? 'critical' : ''}">
+                    <div>${alert.message}</div>
+                    <div class="alert-time">${new Date(alert.timestamp).toLocaleString('ko-KR')}</div>
+                </div>
+            `).join('');
+        }
+
+        function showTab(tabName, button) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            button.classList.add('active');
+        }
+
+        function scheduleRefresh() {
+            setInterval(loadData, 5 * 60 * 1000);
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
