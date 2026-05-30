@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 """
-CAPEX Sentinel - QoQ (분기별) 분석 최적화 버전
-- 각 기업의 최근 4분기 CAPEX 데이터 추적
-- QoQ 변화율 계산 (분기별 비교)
-- 연속 2분기 이상 하락 감지 → 경고신호
-- YoY는 검증용으로만 사용
+CAPEX Sentinel - 방안B 정교화 버전
+CRITICAL/WARNING 기업 개수로 세분화된 CAPEX 가중치
 """
 
 import os
@@ -20,7 +17,6 @@ class CapexMonitor:
     def __init__(self):
         self.fred_api_key = os.getenv('FRED_API_KEY', 'demo_key')
         
-        # 빅테크 기업 정보 (QoQ 모니터링용)
         self.bigtech_companies = {
             'MSFT': {
                 'cik': '0000789019',
@@ -78,6 +74,8 @@ class CapexMonitor:
                 'critical_signals': [],
                 'qoq_analysis': {
                     'total_weighted_qoq': 0,
+                    'critical_count': 0,
+                    'warning_count': 0,
                     'companies_with_consecutive_decline': []
                 }
             },
@@ -85,9 +83,7 @@ class CapexMonitor:
         }
 
     def fetch_fred_data(self):
-        """
-        A) FRED API - 거시경제 지표
-        """
+        """A) FRED API"""
         try:
             print("\n📊 [FRED API] 거시경제 지표 수집 중...")
             
@@ -151,9 +147,7 @@ class CapexMonitor:
             print(f"❌ FRED 오류: {e}")
 
     def fetch_tsmc_data(self):
-        """
-        B) TSMC 데이터
-        """
+        """B) TSMC"""
         try:
             print("\n🏢 [TSMC] 실적 데이터 수집 중...")
             
@@ -192,9 +186,7 @@ class CapexMonitor:
             return False
 
     def fetch_korea_semicon_exports(self):
-        """
-        C) 한국 반도체 수출
-        """
+        """C) 한국 반도체"""
         try:
             print("\n🇰🇷 [한국 반도체] 수출 데이터 수집 중...")
             
@@ -220,20 +212,18 @@ class CapexMonitor:
             return False
 
     def fetch_bigtech_capex_qoq(self):
-        """
-        D) 빅테크 CAPEX - QoQ (분기별 비교) 분석 ✅
-        """
+        """D) 빅테크 CAPEX - 방안B 정교화"""
         try:
-            print("\n📈 [SEC EDGAR] 빅테크 CAPEX QoQ 분석 중...")
-            print("   (분기별 비교 기반 연속 하락 신호 포착)")
+            print("\n📈 [SEC EDGAR] 빅테크 CAPEX QoQ 정교화 분석...")
             
             capex_data = {}
             consecutive_decline_companies = []
+            critical_companies = []
+            warning_companies = []
             total_weighted_qoq = 0
             critical_signals = []
             
-            # 각 기업의 시뮬레이션 데이터 (실제 SEC 데이터 대신)
-            # 실제 구현에서는 SEC EDGAR에서 가져옴
+            # 시뮬레이션 데이터 (CAPEX 규모도 포함)
             company_capex_quarters = {
                 'MSFT': [
                     {'quarter': 'Q1 2026', 'capex': 10000},
@@ -289,9 +279,9 @@ class CapexMonitor:
                     quarters = company_capex_quarters.get(ticker, [])
                     
                     if len(quarters) >= 2:
-                        # QoQ 변화율 계산
                         quarterly_data = []
                         consecutive_decline_count = 0
+                        latest_capex = quarters[-1]['capex']
                         
                         for i, q in enumerate(quarters):
                             quarter_info = {
@@ -301,33 +291,32 @@ class CapexMonitor:
                             }
                             quarterly_data.append(quarter_info)
                             
-                            # 연속 하락 개수 세기
                             if i > 0 and quarter_info['qoq_change'] < 0:
                                 consecutive_decline_count += 1
                             elif quarter_info['qoq_change'] >= 0:
                                 consecutive_decline_count = 0
                         
-                        # 최근 QoQ 변화율
                         latest_qoq = quarterly_data[-1]['qoq_change']
                         
-                        # 신호 판정
+                        # 신호 판정 (방안B)
                         signal_level = 'NORMAL'
                         signal_value = 0
                         
                         if consecutive_decline_count >= 2:
-                            # 연속 2분기 이상 하락 = 명확한 신호
                             if latest_qoq < -5:
                                 signal_level = 'CRITICAL'
                                 signal_value = 40
                                 signal_msg = f"🔴 CRITICAL: 연속 {consecutive_decline_count}분기 {latest_qoq:.1f}% 급락"
+                                critical_companies.append(ticker)
                             else:
                                 signal_level = 'WARNING'
                                 signal_value = 25
                                 signal_msg = f"🟠 WARNING: 연속 {consecutive_decline_count}분기 {latest_qoq:.1f}% 하락"
+                                warning_companies.append(ticker)
                         elif consecutive_decline_count == 1:
                             signal_level = 'CAUTION'
                             signal_value = 10
-                            signal_msg = f"🟡 CAUTION: 단기 {latest_qoq:.1f}% 하락"
+                            signal_msg = f"🟡 CAUTION: {latest_qoq:.1f}% 하락"
                         else:
                             signal_msg = "✅ 정상"
                         
@@ -335,6 +324,7 @@ class CapexMonitor:
                             'name': name,
                             'quarters': quarterly_data,
                             'latest_qoq': latest_qoq,
+                            'latest_capex': latest_capex,
                             'consecutive_decline_quarters': consecutive_decline_count,
                             'signal_level': signal_level,
                             'signal_value': signal_value,
@@ -349,11 +339,19 @@ class CapexMonitor:
                             critical_signals.append(signal_msg)
                         
                         print(f"    {signal_msg}")
-                        print(f"    최근 QoQ: {latest_qoq:.1f}% | 연속 하락: {consecutive_decline_count}분기")
+                        print(f"    최근 CAPEX: ${latest_capex}M | QoQ: {latest_qoq:.1f}% | 연속: {consecutive_decline_count}분기")
                 
                 except Exception as e:
                     print(f"    ⚠️  {ticker} 오류: {e}")
                     continue
+            
+            # 방안B: CRITICAL/WARNING 개수로 세분화
+            critical_count = len(critical_companies)
+            warning_count = len(warning_companies)
+            
+            print(f"\n  🎯 CAPEX 신호 집계:")
+            print(f"     CRITICAL 기업: {critical_count}개 ({', '.join(critical_companies) if critical_companies else '없음'})")
+            print(f"     WARNING 기업: {warning_count}개 ({', '.join(warning_companies) if warning_companies else '없음'})")
             
             # 종합 분석
             self.data['components']['bigtech_capex_trend'] = total_weighted_qoq
@@ -361,17 +359,21 @@ class CapexMonitor:
             self.data['capex_details']['critical_signals'] = critical_signals
             self.data['capex_details']['qoq_analysis'] = {
                 'total_weighted_qoq': total_weighted_qoq,
+                'critical_count': critical_count,
+                'warning_count': warning_count,
                 'companies_with_consecutive_decline': consecutive_decline_companies,
-                'analysis_basis': 'QoQ (분기별 비교)'
+                'analysis_basis': 'QoQ (분기별 비교) + CRITICAL/WARNING 세분화'
             }
             
             # 경고 메시지
-            if consecutive_decline_companies:
-                trend_msg = f"🚨 CRITICAL: {', '.join(consecutive_decline_companies[:2])}"
-            elif total_weighted_qoq < -5:
-                trend_msg = f"⚠️  집단 하락 신호: {total_weighted_qoq:.1f}% QoQ"
+            if critical_count >= 3:
+                trend_msg = f"🚨 CRITICAL: {critical_count}개 기업 연속 하락 → 경기 둔화 신호 강도 높음"
+            elif critical_count >= 2:
+                trend_msg = f"⚠️  경고: {critical_count}개 기업 CRITICAL + {warning_count}개 경고"
+            elif critical_count >= 1 and warning_count >= 2:
+                trend_msg = f"주의: CRITICAL {critical_count}개 + WARNING {warning_count}개"
             else:
-                trend_msg = f"정상 범위: {total_weighted_qoq:.1f}% QoQ"
+                trend_msg = f"관찰: 가중 QoQ {total_weighted_qoq:.1f}%"
             
             self.data['capex_details']['trend_analysis'] = trend_msg
             
@@ -382,16 +384,14 @@ class CapexMonitor:
             return True
             
         except Exception as e:
-            print(f"❌ CAPEX QoQ 분석 오류: {e}")
+            print(f"❌ CAPEX 분석 오류: {e}")
             self.data['components']['bigtech_capex_trend'] = -5.0
             return False
 
     def calculate_risk_score(self):
-        """
-        위험 점수 계산 (QoQ 신호 기반 강화)
-        """
+        """위험 점수 계산 - 방안B 적용"""
         try:
-            print("\n🎯 위험 점수 계산 중...")
+            print("\n🎯 위험 점수 계산 중 (방안B)...")
             
             score = 0
             comp = self.data['components']
@@ -415,24 +415,38 @@ class CapexMonitor:
             if jpy_usd and jpy_usd < 145:
                 score += 20
             
-            # 4. CAPEX QoQ 신호 (가중치 대幅 상향)
-            capex_data = self.data['capex_details']['by_company']
-            consecutive_decline_count = len(self.data['capex_details']['qoq_analysis']['companies_with_consecutive_decline'])
+            # 4. CAPEX - 방안B (CRITICAL/WARNING 개수)
+            qoq_analysis = self.data['capex_details']['qoq_analysis']
+            critical_count = qoq_analysis.get('critical_count', 0)
+            warning_count = qoq_analysis.get('warning_count', 0)
             
-            # QoQ 기반 신호
-            if consecutive_decline_count >= 3:  # 3개 이상 기업 연속 하락
-                score += 45  # 매우 높음
-            elif consecutive_decline_count >= 2:  # 2개 기업 연속 하락
-                score += 35
-            elif consecutive_decline_count >= 1:  # 1개 기업 연속 하락
-                score += 25
+            print(f"   CAPEX 신호: CRITICAL {critical_count}개, WARNING {warning_count}개")
+            
+            # 방안B 가중치 적용 ✅
+            if critical_count >= 3:  # 3개 이상 CRITICAL
+                capex_score = 75
+                print(f"   → CAPEX 점수: {capex_score}점 (3개 이상 CRITICAL)")
+            elif critical_count >= 2 and warning_count >= 2:  # 2개 CRITICAL + 2개 이상 WARNING
+                capex_score = 65
+                print(f"   → CAPEX 점수: {capex_score}점 (2개 CRITICAL + 2개↑ WARNING)")
+            elif critical_count >= 1 and warning_count >= 3:  # 1개 CRITICAL + 3개 이상 WARNING
+                capex_score = 55
+                print(f"   → CAPEX 점수: {capex_score}점 (1개 CRITICAL + 3개↑ WARNING)")
+            elif warning_count >= 3:  # 3개 이상 WARNING만
+                capex_score = 40
+                print(f"   → CAPEX 점수: {capex_score}점 (3개↑ WARNING)")
             else:
-                # 가중 QoQ 만으로 판단
+                # 가중 QoQ로 판단
                 weighted_qoq = comp.get('bigtech_capex_trend', 0)
                 if weighted_qoq < -8:
-                    score += 30
+                    capex_score = 30
                 elif weighted_qoq < -5:
-                    score += 20
+                    capex_score = 20
+                else:
+                    capex_score = 10
+                print(f"   → CAPEX 점수: {capex_score}점 (가중 QoQ {weighted_qoq:.1f}%)")
+            
+            score += capex_score
             
             final_score = min(max(score, 0), 100)
             self.data['risk_score'] = final_score
@@ -444,20 +458,14 @@ class CapexMonitor:
             else:
                 self.data['status'] = 'NORMAL'
             
-            print(f"✓ 위험 점수: {final_score:.1f} ({self.data['status']})")
-            
-            if self.data['capex_details']['critical_signals']:
-                print(f"⚠️  주요 신호:")
-                for signal in self.data['capex_details']['critical_signals'][:3]:
-                    print(f"   {signal}")
+            print(f"\n✓ 최종 위험 점수: {final_score:.1f} ({self.data['status']})")
+            print(f"  구성: TSMC({0 if tsmc_yoy >= -5 else (20 if tsmc_yoy >= -10 else 30)}) + 한국반도체({0 if korea_change >= -3 else (15 if korea_change >= -5 else 25)}) + 매크로({0 if not (jpy_usd and jpy_usd < 145) else 20}) + CAPEX({capex_score})")
             
         except Exception as e:
             print(f"❌ 점수 계산 오류: {e}")
 
     def save_data(self):
-        """
-        데이터 저장
-        """
+        """데이터 저장"""
         try:
             with open('data.json', 'w', encoding='utf-8') as f:
                 json.dump(self.data, f, ensure_ascii=False, indent=2)
@@ -465,23 +473,20 @@ class CapexMonitor:
             print(f"\n✓ data.json 저장 완료")
             print(f"  점수: {self.data['risk_score']:.1f}")
             print(f"  상태: {self.data['status']}")
-            print(f"  QoQ 신호: {len(self.data['capex_details']['qoq_analysis']['companies_with_consecutive_decline'])}개 기업 연속 하락")
             
         except Exception as e:
             print(f"❌ 저장 오류: {e}")
 
     def run(self):
-        """
-        메인 실행
-        """
+        """메인 실행"""
         print("=" * 70)
-        print("CAPEX Sentinel - QoQ 분기별 분석 최적화 버전")
+        print("CAPEX Sentinel - 방안B 정교화 최종 버전")
         print("=" * 70)
         
         self.fetch_fred_data()
         self.fetch_tsmc_data()
         self.fetch_korea_semicon_exports()
-        self.fetch_bigtech_capex_qoq()  # QoQ 분석
+        self.fetch_bigtech_capex_qoq()
         
         self.calculate_risk_score()
         self.save_data()
