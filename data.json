@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-05-30T20:58:02.459729+09:00",
-  "risk_score": 15,
+  "timestamp": "2026-05-30T21:15:17.537176+09:00",
+  "risk_score": 25,
   "status": "NORMAL",
   "components": {
     "fed_rate": 3.64,
@@ -9,7 +9,39 @@
     "tsmc_yoy": 9.580723339090175,
     "korea_semicon_exports": 2850000000,
     "korea_semicon_change": -1.5,
-    "bigtech_capex_trend": -6.5
+    "bigtech_capex_trend": -2.911
+  },
+  "capex_details": {
+    "by_company": {
+      "MSFT": {
+        "name": "Microsoft",
+        "latest_filing": "2026-04-29",
+        "capex_yoy_change": -8.2,
+        "weight": 0.25,
+        "weighted_impact": -2.05,
+        "context": "클라우드/AI 인프라"
+      },
+      "AAPL": {
+        "name": "Apple",
+        "latest_filing": "2026-05-01",
+        "capex_yoy_change": -6.3,
+        "weight": 0.12,
+        "weighted_impact": -0.756,
+        "context": "제조/서비스 인프라"
+      },
+      "NVDA": {
+        "name": "NVIDIA",
+        "latest_filing": "2026-05-20",
+        "capex_yoy_change": -2.1,
+        "weight": 0.05,
+        "weighted_impact": -0.10500000000000001,
+        "context": "R&D/설계"
+      }
+    },
+    "trend_analysis": "🚨 CRITICAL: Microsoft: CAPEX -8.2% 하락 추세",
+    "critical_signals": [
+      "Microsoft: CAPEX -8.2% 하락 추세"
+    ]
   },
   "alerts": []
 }
