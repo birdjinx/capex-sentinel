@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-05-30T00:44:18.648672+09:00",
+  "timestamp": "2026-05-30T11:23:31.080112+09:00",
   "risk_score": 50,
   "status": "WARNING",
   "components": {
-    "us_10y_yield": 4.48,
-    "jpy_usd": 159.2,
     "fed_rate": 3.64,
-    "tsmc_yoy": -6.8,
+    "us_10y_yield": 4.45,
+    "jpy_usd": 159.2,
+    "tsmc_yoy": -6.5,
     "korea_semicon_exports": 2850000000,
-    "korea_semicon_change": -4.2,
-    "bigtech_capex_trend": -7.3
+    "korea_semicon_change": -3.8,
+    "bigtech_capex_trend": -7.5
   },
   "alerts": []
 }
