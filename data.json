@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-05-30T21:30:53.497820+09:00",
-  "risk_score": 25,
+  "timestamp": "2026-05-30T21:39:43.055545+09:00",
+  "risk_score": 45,
   "status": "NORMAL",
   "components": {
     "fed_rate": 3.64,
@@ -9,39 +9,249 @@
     "tsmc_yoy": 9.580723339090175,
     "korea_semicon_exports": 2850000000,
     "korea_semicon_change": -1.5,
-    "bigtech_capex_trend": -2.911
+    "bigtech_capex_trend": -4.182565014254126
   },
   "capex_details": {
     "by_company": {
       "MSFT": {
         "name": "Microsoft",
-        "latest_filing": "2026-04-29",
-        "capex_yoy_change": -8.2,
+        "quarters": [
+          {
+            "quarter": "Q1 2026",
+            "capex": 10000,
+            "qoq_change": 0
+          },
+          {
+            "quarter": "Q2 2026",
+            "capex": 9800,
+            "qoq_change": -2.0
+          },
+          {
+            "quarter": "Q3 2026",
+            "capex": 9500,
+            "qoq_change": -3.061224489795918
+          },
+          {
+            "quarter": "Q4 2026",
+            "capex": 9200,
+            "qoq_change": -3.1578947368421053
+          }
+        ],
+        "latest_qoq": -3.1578947368421053,
+        "consecutive_decline_quarters": 3,
+        "signal_level": "WARNING",
+        "signal_value": 25,
         "weight": 0.25,
-        "weighted_impact": -2.05,
-        "context": "클라우드/AI 인프라"
+        "weighted_impact": -0.7894736842105263
+      },
+      "GOOGL": {
+        "name": "Alphabet",
+        "quarters": [
+          {
+            "quarter": "Q1 2026",
+            "capex": 8500,
+            "qoq_change": 0
+          },
+          {
+            "quarter": "Q2 2026",
+            "capex": 8400,
+            "qoq_change": -1.1764705882352942
+          },
+          {
+            "quarter": "Q3 2026",
+            "capex": 8200,
+            "qoq_change": -2.380952380952381
+          },
+          {
+            "quarter": "Q4 2026",
+            "capex": 8000,
+            "qoq_change": -2.4390243902439024
+          }
+        ],
+        "latest_qoq": -2.4390243902439024,
+        "consecutive_decline_quarters": 3,
+        "signal_level": "WARNING",
+        "signal_value": 25,
+        "weight": 0.2,
+        "weighted_impact": -0.4878048780487805
+      },
+      "AMZN": {
+        "name": "Amazon",
+        "quarters": [
+          {
+            "quarter": "Q1 2026",
+            "capex": 7500,
+            "qoq_change": 0
+          },
+          {
+            "quarter": "Q2 2026",
+            "capex": 7200,
+            "qoq_change": -4.0
+          },
+          {
+            "quarter": "Q3 2026",
+            "capex": 6900,
+            "qoq_change": -4.166666666666666
+          },
+          {
+            "quarter": "Q4 2026",
+            "capex": 6500,
+            "qoq_change": -5.797101449275362
+          }
+        ],
+        "latest_qoq": -5.797101449275362,
+        "consecutive_decline_quarters": 3,
+        "signal_level": "CRITICAL",
+        "signal_value": 40,
+        "weight": 0.2,
+        "weighted_impact": -1.1594202898550725
+      },
+      "META": {
+        "name": "Meta",
+        "quarters": [
+          {
+            "quarter": "Q1 2026",
+            "capex": 3500,
+            "qoq_change": 0
+          },
+          {
+            "quarter": "Q2 2026",
+            "capex": 3000,
+            "qoq_change": -14.285714285714285
+          },
+          {
+            "quarter": "Q3 2026",
+            "capex": 2800,
+            "qoq_change": -6.666666666666667
+          },
+          {
+            "quarter": "Q4 2026",
+            "capex": 2600,
+            "qoq_change": -7.142857142857142
+          }
+        ],
+        "latest_qoq": -7.142857142857142,
+        "consecutive_decline_quarters": 3,
+        "signal_level": "CRITICAL",
+        "signal_value": 40,
+        "weight": 0.15,
+        "weighted_impact": -1.0714285714285714
       },
       "AAPL": {
         "name": "Apple",
-        "latest_filing": "2026-05-01",
-        "capex_yoy_change": -6.3,
+        "quarters": [
+          {
+            "quarter": "Q1 2026",
+            "capex": 2800,
+            "qoq_change": 0
+          },
+          {
+            "quarter": "Q2 2026",
+            "capex": 2750,
+            "qoq_change": -1.7857142857142856
+          },
+          {
+            "quarter": "Q3 2026",
+            "capex": 2650,
+            "qoq_change": -3.6363636363636362
+          },
+          {
+            "quarter": "Q4 2026",
+            "capex": 2500,
+            "qoq_change": -5.660377358490567
+          }
+        ],
+        "latest_qoq": -5.660377358490567,
+        "consecutive_decline_quarters": 3,
+        "signal_level": "CRITICAL",
+        "signal_value": 40,
         "weight": 0.12,
-        "weighted_impact": -0.756,
-        "context": "제조/서비스 인프라"
+        "weighted_impact": -0.679245283018868
       },
       "NVDA": {
         "name": "NVIDIA",
-        "latest_filing": "2026-05-20",
-        "capex_yoy_change": -2.1,
+        "quarters": [
+          {
+            "quarter": "Q1 2026",
+            "capex": 1200,
+            "qoq_change": 0
+          },
+          {
+            "quarter": "Q2 2026",
+            "capex": 1250,
+            "qoq_change": 4.166666666666666
+          },
+          {
+            "quarter": "Q3 2026",
+            "capex": 1300,
+            "qoq_change": 4.0
+          },
+          {
+            "quarter": "Q4 2026",
+            "capex": 1350,
+            "qoq_change": 3.8461538461538463
+          }
+        ],
+        "latest_qoq": 3.8461538461538463,
+        "consecutive_decline_quarters": 0,
+        "signal_level": "NORMAL",
+        "signal_value": 0,
         "weight": 0.05,
-        "weighted_impact": -0.10500000000000001,
-        "context": "R&D/설계"
+        "weighted_impact": 0.19230769230769232
+      },
+      "TSLA": {
+        "name": "Tesla",
+        "quarters": [
+          {
+            "quarter": "Q1 2026",
+            "capex": 900,
+            "qoq_change": 0
+          },
+          {
+            "quarter": "Q2 2026",
+            "capex": 850,
+            "qoq_change": -5.555555555555555
+          },
+          {
+            "quarter": "Q3 2026",
+            "capex": 800,
+            "qoq_change": -5.88235294117647
+          },
+          {
+            "quarter": "Q4 2026",
+            "capex": 750,
+            "qoq_change": -6.25
+          }
+        ],
+        "latest_qoq": -6.25,
+        "consecutive_decline_quarters": 3,
+        "signal_level": "CRITICAL",
+        "signal_value": 40,
+        "weight": 0.03,
+        "weighted_impact": -0.1875
       }
     },
-    "trend_analysis": "🚨 CRITICAL: Microsoft: CAPEX -8.2% 하락 추세",
+    "trend_analysis": "🚨 CRITICAL: Microsoft: 3분기 연속 -3.2% 하락, Alphabet: 3분기 연속 -2.4% 하락",
     "critical_signals": [
-      "Microsoft: CAPEX -8.2% 하락 추세"
-    ]
+      "🟠 WARNING: 연속 3분기 -3.2% 하락",
+      "🟠 WARNING: 연속 3분기 -2.4% 하락",
+      "🔴 CRITICAL: 연속 3분기 -5.8% 급락",
+      "🔴 CRITICAL: 연속 3분기 -7.1% 급락",
+      "🔴 CRITICAL: 연속 3분기 -5.7% 급락",
+      "🔴 CRITICAL: 연속 3분기 -6.2% 급락"
+    ],
+    "qoq_analysis": {
+      "total_weighted_qoq": -4.182565014254126,
+      "companies_with_consecutive_decline": [
+        "Microsoft: 3분기 연속 -3.2% 하락",
+        "Alphabet: 3분기 연속 -2.4% 하락",
+        "Amazon: 3분기 연속 -5.8% 하락",
+        "Meta: 3분기 연속 -7.1% 하락",
+        "Apple: 3분기 연속 -5.7% 하락",
+        "Tesla: 3분기 연속 -6.2% 하락"
+      ],
+      "analysis_basis": "QoQ (분기별 비교)"
+    }
   },
   "alerts": []
 }
