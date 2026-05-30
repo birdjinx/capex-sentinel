@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-05-30T21:39:43.055545+09:00",
-  "risk_score": 45,
-  "status": "NORMAL",
+  "timestamp": "2026-05-31T03:04:03.842269+09:00",
+  "risk_score": 75,
+  "status": "CRITICAL",
   "components": {
     "fed_rate": 3.64,
     "us_10y_yield": 4.45,
@@ -38,6 +38,7 @@
           }
         ],
         "latest_qoq": -3.1578947368421053,
+        "latest_capex": 9200,
         "consecutive_decline_quarters": 3,
         "signal_level": "WARNING",
         "signal_value": 25,
@@ -69,6 +70,7 @@
           }
         ],
         "latest_qoq": -2.4390243902439024,
+        "latest_capex": 8000,
         "consecutive_decline_quarters": 3,
         "signal_level": "WARNING",
         "signal_value": 25,
@@ -100,6 +102,7 @@
           }
         ],
         "latest_qoq": -5.797101449275362,
+        "latest_capex": 6500,
         "consecutive_decline_quarters": 3,
         "signal_level": "CRITICAL",
         "signal_value": 40,
@@ -131,6 +134,7 @@
           }
         ],
         "latest_qoq": -7.142857142857142,
+        "latest_capex": 2600,
         "consecutive_decline_quarters": 3,
         "signal_level": "CRITICAL",
         "signal_value": 40,
@@ -162,6 +166,7 @@
           }
         ],
         "latest_qoq": -5.660377358490567,
+        "latest_capex": 2500,
         "consecutive_decline_quarters": 3,
         "signal_level": "CRITICAL",
         "signal_value": 40,
@@ -193,6 +198,7 @@
           }
         ],
         "latest_qoq": 3.8461538461538463,
+        "latest_capex": 1350,
         "consecutive_decline_quarters": 0,
         "signal_level": "NORMAL",
         "signal_value": 0,
@@ -224,6 +230,7 @@
           }
         ],
         "latest_qoq": -6.25,
+        "latest_capex": 750,
         "consecutive_decline_quarters": 3,
         "signal_level": "CRITICAL",
         "signal_value": 40,
@@ -231,7 +238,7 @@
         "weighted_impact": -0.1875
       }
     },
-    "trend_analysis": "🚨 CRITICAL: Microsoft: 3분기 연속 -3.2% 하락, Alphabet: 3분기 연속 -2.4% 하락",
+    "trend_analysis": "🚨 CRITICAL: 4개 기업 연속 하락 → 경기 둔화 신호 강도 높음",
     "critical_signals": [
       "🟠 WARNING: 연속 3분기 -3.2% 하락",
       "🟠 WARNING: 연속 3분기 -2.4% 하락",
@@ -242,6 +249,8 @@
     ],
     "qoq_analysis": {
       "total_weighted_qoq": -4.182565014254126,
+      "critical_count": 4,
+      "warning_count": 2,
       "companies_with_consecutive_decline": [
         "Microsoft: 3분기 연속 -3.2% 하락",
         "Alphabet: 3분기 연속 -2.4% 하락",
@@ -250,7 +259,7 @@
         "Apple: 3분기 연속 -5.7% 하락",
         "Tesla: 3분기 연속 -6.2% 하락"
       ],
-      "analysis_basis": "QoQ (분기별 비교)"
+      "analysis_basis": "QoQ (분기별 비교) + CRITICAL/WARNING 세분화"
     }
   },
   "alerts": []
