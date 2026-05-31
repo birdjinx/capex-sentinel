@@ -2,37 +2,38 @@ name: CAPEX Sentinel Daily Update
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron '0 6 * * *'  # 매일 오전 6시 UTC
   workflow_dispatch:
 
 jobs:
-  update-data:
+  update-capex:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v3
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-
+      
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install requests pytz beautifulsoup4 lxml yfinance
-
-      - name: Run CAPEX monitor script
+      
+      - name: Step 1: Parse SEC EDGAR
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-        run: python scripts/capex_monitor.py
-
-      - name: Commit and push changes
+        run: python scripts/sec_capex_parser.py
+      
+      - name: Step 2: Run CAPEX Monitor
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/capex_monitor_final.py
+      
+      - name: Step 3: Commit and push
         run: |
           git config --local user.email "action@github.com"
-          git config --local user.name "CAPEX Sentinel Bot"
-          git add -A
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update CAPEX data $(date -u +'%Y-%m-%d %H:%M:%S UTC')" && git push)
+          git config --local user.name "GitHub Action"
+          git add data.json data_sec_capex.json
+          git commit -m "Update CAPEX data - SEC EDGAR parsed" || true
+          git push
