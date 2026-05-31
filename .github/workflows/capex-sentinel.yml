@@ -17,15 +17,14 @@ jobs:
           python-version: '3.11'
       
       - name: Install dependencies
-        run: |
-          pip install requests pytz beautifulsoup4 lxml yfinance
+        run: pip install requests pytz beautifulsoup4 lxml yfinance
       
-      - name: Step 1: Parse SEC EDGAR
+      - name: Step 1 - Parse SEC EDGAR
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python scripts/sec_capex_parser.py
       
-      - name: Step 2: Run CAPEX Monitor
+      - name: Step 2 - Run CAPEX Monitor
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python scripts/capex_monitor_final.py
