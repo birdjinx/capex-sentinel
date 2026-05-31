@@ -87,10 +87,14 @@ class CapexMonitor:
         try:
             print("\n📊 [FRED API] 거시경제 지표 수집 중...")
             
+            # BOJ 기본값 설정
+            self.data['components']['boj_rate'] = 0.1  # 기본값
+            
             indicators = {
                 'FEDFUNDS': ('Fed Rate', 'Fed 기준금리'),
                 'DGS10': ('10Y Treasury', '10년물 수익률'),
-                'DEXJPUS': ('USD/JPY', 'USD/JPY 환율')
+                'DEXJPUS': ('USD/JPY', 'USD/JPY 환율'),
+                'BOJMMRDF': ('BOJ Rate', 'BOJ 기준금리')
             }
             
             for series_id, (en_name, kr_name) in indicators.items():
@@ -134,6 +138,10 @@ class CapexMonitor:
                                 elif series_id == 'DEXJPUS':
                                     self.data['components']['jpy_usd'] = value
                                     print(f"  ✅ USD/JPY: {value:.2f} ({date})")
+                                elif series_id == 'BOJMMRDF':
+                                    if value >= 0 and value <= 10:
+                                        self.data['components']['boj_rate'] = value
+                                        print(f"  ✅ BOJ 기준금리: {value:.2f}% ({date})")
                             
                             except ValueError:
                                 pass
@@ -345,11 +353,11 @@ class CapexMonitor:
                     print(f"    ⚠️  {ticker} 오류: {e}")
                     continue
             
-            # 방안B: CRITICAL/WARNING 개수로 세분화
+            # 방안B: CRITICAL/WARNING 개수로 세분화 (가중치 조정 - 2026년 대비 신중)
             critical_count = len(critical_companies)
             warning_count = len(warning_companies)
             
-            print(f"\n  🎯 CAPEX 신호 집계:")
+            print(f"\n  🎯 CAPEX 신호 집계 (조정된 가중치):")
             print(f"     CRITICAL 기업: {critical_count}개 ({', '.join(critical_companies) if critical_companies else '없음'})")
             print(f"     WARNING 기업: {warning_count}개 ({', '.join(warning_companies) if warning_companies else '없음'})")
             
@@ -422,19 +430,20 @@ class CapexMonitor:
             
             print(f"   CAPEX 신호: CRITICAL {critical_count}개, WARNING {warning_count}개")
             
-            # 방안B 가중치 적용 ✅
+            # 방안B 가중치 적용 (2026년 대비 신중하게 조정) ✅
+            # 올해는 나스닥 성장 여지 있으므로, 내년 대비로 신중히 설정
             if critical_count >= 3:  # 3개 이상 CRITICAL
-                capex_score = 75
-                print(f"   → CAPEX 점수: {capex_score}점 (3개 이상 CRITICAL)")
+                capex_score = 60  # 75 → 60 (신중)
+                print(f"   → CAPEX 점수: {capex_score}점 (3개 이상 CRITICAL - 조정됨)")
             elif critical_count >= 2 and warning_count >= 2:  # 2개 CRITICAL + 2개 이상 WARNING
-                capex_score = 65
-                print(f"   → CAPEX 점수: {capex_score}점 (2개 CRITICAL + 2개↑ WARNING)")
+                capex_score = 50  # 65 → 50
+                print(f"   → CAPEX 점수: {capex_score}점 (2개 CRITICAL + 2개↑ WARNING - 조정됨)")
             elif critical_count >= 1 and warning_count >= 3:  # 1개 CRITICAL + 3개 이상 WARNING
-                capex_score = 55
-                print(f"   → CAPEX 점수: {capex_score}점 (1개 CRITICAL + 3개↑ WARNING)")
+                capex_score = 40  # 55 → 40
+                print(f"   → CAPEX 점수: {capex_score}점 (1개 CRITICAL + 3개↑ WARNING - 조정됨)")
             elif warning_count >= 3:  # 3개 이상 WARNING만
-                capex_score = 40
-                print(f"   → CAPEX 점수: {capex_score}점 (3개↑ WARNING)")
+                capex_score = 25  # 40 → 25
+                print(f"   → CAPEX 점수: {capex_score}점 (3개↑ WARNING - 조정됨)")
             else:
                 # 가중 QoQ로 판단
                 weighted_qoq = comp.get('bigtech_capex_trend', 0)
