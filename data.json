@@ -1,8 +1,9 @@
 {
-  "timestamp": "2026-05-31T03:12:51.299476+09:00",
-  "risk_score": 75,
-  "status": "CRITICAL",
+  "timestamp": "2026-05-31T10:57:01.418972+09:00",
+  "risk_score": 60,
+  "status": "WARNING",
   "components": {
+    "boj_rate": 0.1,
     "fed_rate": 3.64,
     "us_10y_yield": 4.45,
     "jpy_usd": 159.2,
