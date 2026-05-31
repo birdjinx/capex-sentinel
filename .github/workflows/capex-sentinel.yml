@@ -28,3 +28,12 @@ jobs:
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python scripts/capex_monitor_final.py
+
+        - name: Commit and push
+        if: always()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add data.json data_sec_capex.json
+          git commit -m "Update CAPEX data - SEC EDGAR parsed" || true
+          git push origin main || echo "Push failed but data was generated"
