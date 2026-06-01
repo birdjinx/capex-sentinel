@@ -622,6 +622,7 @@
         <!-- 설정 섹션 -->
         <div id="settings" class="section">
             <div class="card">
+                <h3 style="color: #d4af37; margin-bottom: 16px; font-size: 14px;">📊 시스템 정보</h3>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <div>
                         <div class="data-label">시스템 버전</div>
@@ -659,10 +660,52 @@
                         <div class="data-label">데이터 저장</div>
                         <div class="data-value">✅ 로컬 브라우저 + GitHub Actions</div>
                     </div>
-                    <div>
-                        <div class="data-label">그래프</div>
-                        <div class="data-value">📊 실시간 업데이트</div>
+                </div>
+            </div>
+
+            <!-- 거시경제 데이터 수동 입력 -->
+            <div class="card" style="margin-top: 20px;">
+                <h3 style="color: #d4af37; margin-bottom: 16px; font-size: 14px;">🌍 거시경제 데이터 입력</h3>
+                <p style="font-size: 10px; color: #a8b5cc; margin-bottom: 14px;">
+                    API 파싱 실패 시 아래에서 수동으로 입력하세요. 저장하면 대시보드 위험 점수 계산에 즉시 반영됩니다.
+                </p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                    <div class="input-field">
+                        <label>Fed 기준금리 (%)</label>
+                        <input type="number" id="macroFed" placeholder="예: 3.64" step="0.01">
                     </div>
+                    <div class="input-field">
+                        <label>10년물 수익률 (%)</label>
+                        <input type="number" id="macro10Y" placeholder="예: 4.45" step="0.01">
+                    </div>
+                    <div class="input-field">
+                        <label>JPY/USD 환율</label>
+                        <input type="number" id="macroJPY" placeholder="예: 159.20" step="0.01">
+                    </div>
+                    <div class="input-field">
+                        <label>BOJ 기준금리 (%)</label>
+                        <input type="number" id="macroBOJ" placeholder="예: 0.75" step="0.01">
+                    </div>
+                    <div class="input-field">
+                        <label>TSMC YoY (%)</label>
+                        <input type="number" id="macroTSMC" placeholder="예: 9.5" step="0.1">
+                    </div>
+                    <div class="input-field">
+                        <label>한국 반도체 MoM (%)</label>
+                        <input type="number" id="macroKorea" placeholder="예: -1.5" step="0.1">
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button onclick="saveMacroData()">💾 거시경제 데이터 저장</button>
+                    <button class="secondary" onclick="clearMacroData()">🗑️ 초기값 복원</button>
+                </div>
+
+                <div id="macroMessage"></div>
+
+                <div class="update-time" style="margin-top: 14px;">
+                    마지막 수정: <span id="macroUpdateTime">미설정</span>
                 </div>
             </div>
         </div>
@@ -801,6 +844,7 @@
 
         function calculateRiskScore() {
             const { capexData, cloudData } = loadData();
+            const savedMacroData = JSON.parse(localStorage.getItem('macro_data') || 'null');
             
             let score = 0;
             let capexScore = 0;
@@ -843,15 +887,23 @@
             else capexScore = 5;
 
             // 2. TSMC + 한국 반도체 (12% 가중치)
-            const tsmcVal = parseFloat(document.getElementById('tsmc').textContent) || 0;
-            const koreaVal = parseFloat(document.getElementById('koreaChip').textContent) || 0;
+            let tsmcVal = 9.5;
+            let koreaVal = -1.5;
+            if (savedMacroData) {
+                tsmcVal = savedMacroData.tsmc || 9.5;
+                koreaVal = savedMacroData.korea || -1.5;
+            }
             
             if (tsmcVal < -10 || koreaVal < -5) chipScore = 12;
             else if (tsmcVal < -5 || koreaVal < -3) chipScore = 8;
             else chipScore = 3;
 
             // 3. 거시경제 지표 (8% 가중치)
-            const jpyVal = parseFloat(document.getElementById('jpy').textContent) || 150;
+            let jpyVal = 159.20;
+            if (savedMacroData) {
+                jpyVal = savedMacroData.jpy || 159.20;
+            }
+            
             if (jpyVal < 145) macroScore = 8;
             else if (jpyVal < 150) macroScore = 5;
             else macroScore = 2;
@@ -1204,32 +1256,57 @@
         }
 
         function loadMacroData() {
-            // Fed 데이터 (실시간이려면 data.json에서 로드)
-            document.getElementById('fed').textContent = '3.64%';
-            document.getElementById('us10y').textContent = '4.45%';
+            // localStorage에서 먼저 불러오기
+            const savedMacroData = JSON.parse(localStorage.getItem('macro_data') || 'null');
             
-            // JPY/USD
-            document.getElementById('jpy').textContent = '159.20¥/$';
-            const jpyVal = 159.20;
+            let macroData = {
+                fed: 3.64,
+                us10y: 4.45,
+                jpy: 159.20,
+                boj: 0.75,
+                tsmc: 9.5,
+                korea: -1.5
+            };
+
+            // 저장된 데이터가 있으면 덮어쓰기
+            if (savedMacroData) {
+                macroData = { ...macroData, ...savedMacroData };
+            }
+
+            // 입력 필드에 값 표시
+            document.getElementById('macroFed').value = macroData.fed;
+            document.getElementById('macro10Y').value = macroData.us10y;
+            document.getElementById('macroJPY').value = macroData.jpy;
+            document.getElementById('macroBOJ').value = macroData.boj;
+            document.getElementById('macroTSMC').value = macroData.tsmc;
+            document.getElementById('macroKorea').value = macroData.korea;
+
+            // 대시보드에 표시
+            document.getElementById('fed').textContent = `${macroData.fed}%`;
+            document.getElementById('us10y').textContent = `${macroData.us10y}%`;
+            
+            // JPY 환율
+            document.getElementById('jpy').textContent = `${macroData.jpy}¥/$`;
+            const jpyVal = macroData.jpy;
             document.getElementById('jpyChange').textContent = jpyVal < 145 ? '엔강화 ↓' : '엔약화 ↑';
             document.getElementById('jpyChange').className = jpyVal < 145 ? 'data-change change-up' : 'data-change change-down';
             
             // BOJ
-            document.getElementById('boj').textContent = '0.10%';
+            document.getElementById('boj').textContent = `${macroData.boj}%`;
             
-            // TSMC (YoY 추정)
-            const tsmcVal = 9.5;
+            // TSMC (YoY)
+            const tsmcVal = macroData.tsmc;
             document.getElementById('tsmc').textContent = `${tsmcVal > 0 ? '+' : ''}${tsmcVal}%`;
             document.getElementById('tsmcStatus').className = tsmcVal > 0 ? 'data-change change-up' : 'data-change change-down';
             document.getElementById('tsmcStatus').textContent = tsmcVal > 0 ? '증가 ↑' : '감소 ↓';
             
-            // 한국 반도체 (MoM 추정)
-            const koreaVal = -1.5;
+            // 한국 반도체 (MoM)
+            const koreaVal = macroData.korea;
             document.getElementById('koreaChip').textContent = `${koreaVal > 0 ? '+' : ''}${koreaVal}%`;
             document.getElementById('koreaStatus').className = koreaVal > 0 ? 'data-change change-up' : 'data-change change-down';
             document.getElementById('koreaStatus').textContent = koreaVal > 0 ? '증가 ↑' : '감소 ↓';
             
-            // CAPEX 추세 (평균)
+            // CAPEX 추세
             const { capexData } = loadData();
             let capexAvg = 0;
             let capexCount = 0;
@@ -1246,6 +1323,55 @@
             document.getElementById('capexTrend').textContent = capexAvg > 30 ? '+18.5%' : '입력 대기중';
             document.getElementById('capexStatus').className = 'data-change change-up';
             document.getElementById('capexStatus').textContent = '증가 ↑';
+
+            // 마지막 수정 시간 표시
+            const macroTime = localStorage.getItem('macro_data_time');
+            if (macroTime) {
+                document.getElementById('macroUpdateTime').textContent = macroTime;
+            } else {
+                document.getElementById('macroUpdateTime').textContent = '기본값 (미설정)';
+            }
+        }
+
+        function saveMacroData() {
+            const macroData = {
+                fed: parseFloat(document.getElementById('macroFed').value) || 3.64,
+                us10y: parseFloat(document.getElementById('macro10Y').value) || 4.45,
+                jpy: parseFloat(document.getElementById('macroJPY').value) || 159.20,
+                boj: parseFloat(document.getElementById('macroBOJ').value) || 0.75,
+                tsmc: parseFloat(document.getElementById('macroTSMC').value) || 9.5,
+                korea: parseFloat(document.getElementById('macroKorea').value) || -1.5
+            };
+
+            localStorage.setItem('macro_data', JSON.stringify(macroData));
+            const updateTime = new Date().toLocaleString('ko-KR');
+            localStorage.setItem('macro_data_time', updateTime);
+            document.getElementById('macroUpdateTime').textContent = updateTime;
+
+            document.getElementById('macroMessage').innerHTML = 
+                '<div class="success-msg">✅ 거시경제 데이터 저장 완료!</div>';
+            
+            setTimeout(() => {
+                document.getElementById('macroMessage').innerHTML = '';
+                loadMacroData();
+                calculateRiskScore();
+                updateUI();
+            }, 2000);
+        }
+
+        function clearMacroData() {
+            if (confirm('거시경제 데이터를 초기값으로 복원하시겠습니까?')) {
+                localStorage.removeItem('macro_data');
+                localStorage.removeItem('macro_data_time');
+                loadMacroData();
+                calculateRiskScore();
+                updateUI();
+                document.getElementById('macroMessage').innerHTML = 
+                    '<div class="success-msg">✅ 초기값으로 복원되었습니다!</div>';
+                setTimeout(() => {
+                    document.getElementById('macroMessage').innerHTML = '';
+                }, 2000);
+            }
         }
     </script>
 </body>
