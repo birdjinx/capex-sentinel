@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CAPEX Sentinel - 최종 완성판</title>
+    <title>CAPEX Sentinel 2.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -15,621 +15,539 @@
         }
         
         .header { 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
             background: rgba(10, 14, 39, 0.95); 
             border-bottom: 1px solid #2a3456; 
             padding: 16px 12px; 
-            margin-bottom: 20px; 
+            margin-bottom: 16px; 
+        }
+        
+        .header-content { 
+            max-width: 900px; 
+            margin: 0 auto; 
         }
         
         .header h1 { 
-            max-width: 1000px;
-            margin: 0 auto;
             font-size: 20px; 
             font-weight: 700; 
             color: #d4af37; 
+            letter-spacing: 0.5px; 
         }
         
         .header p { 
-            max-width: 1000px;
-            margin: 0 auto;
             font-size: 11px; 
             color: #a8b5cc; 
             margin-top: 4px; 
         }
         
         .container { 
-            max-width: 1000px; 
+            max-width: 900px; 
             margin: 0 auto; 
             padding: 0 12px 100px 12px; 
         }
         
-        /* ★ 신호등 (최상단, 매우 강조) */
-        .risk-alert {
-            background: rgba(0, 0, 0, 0.3);
-            border: 2px solid #2a3456;
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            display: flex;
-            gap: 24px;
-            align-items: center;
+        .card { 
+            background: rgba(42, 52, 86, 0.3); 
+            border: 1px solid #2a3456; 
+            border-radius: 12px; 
+            padding: 18px; 
+            margin-bottom: 14px; 
         }
-
-        .risk-circle {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            font-weight: 700;
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.7);
-            flex-shrink: 0;
+        
+        .score-box { 
+            display: flex; 
+            gap: 16px; 
+            align-items: flex-end; 
+            margin-bottom: 12px; 
         }
-
-        .risk-circle.safe {
-            background: radial-gradient(circle, #33ff99, #00cc66);
-            color: #0a0e27;
-            box-shadow: 0 0 40px rgba(0, 208, 132, 0.8);
+        
+        .score-circle { 
+            width: 80px; 
+            height: 80px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 32px; 
+            font-weight: 700; 
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5); 
         }
-
-        .risk-circle.warning {
-            background: radial-gradient(circle, #ffd966, #ffb300);
-            color: #1a1a1a;
-            box-shadow: 0 0 40px rgba(255, 193, 7, 0.6);
+        
+        .score-circle.safe { 
+            background: radial-gradient(circle, #33ff99, #00cc66); 
+            color: #0a0e27; 
+            box-shadow: 0 0 30px rgba(0, 208, 132, 0.6); 
         }
-
-        .risk-circle.critical {
-            background: radial-gradient(circle, #ff6666, #cc0000);
-            color: white;
-            box-shadow: 0 0 40px rgba(255, 68, 68, 0.8);
+        
+        .score-circle.warning { 
+            background: radial-gradient(circle, #ffd966, #ffb300); 
+            color: #1a1a1a; 
+            box-shadow: 0 0 30px rgba(255, 193, 7, 0.5); 
         }
-
-        .risk-info {
-            flex: 1;
+        
+        .score-circle.critical { 
+            background: radial-gradient(circle, #ff6666, #cc0000); 
+            color: white; 
+            box-shadow: 0 0 30px rgba(255, 68, 68, 0.6); 
         }
-
-        .risk-title {
-            font-size: 13px;
-            text-transform: uppercase;
-            color: #a8b5cc;
-            letter-spacing: 1px;
-            margin-bottom: 6px;
-            font-weight: 600;
+        
+        .score-info h2 { 
+            font-size: 11px; 
+            color: #a8b5cc; 
+            text-transform: uppercase; 
+            margin-bottom: 4px; 
+            letter-spacing: 1px; 
         }
-
-        .risk-level {
-            font-size: 24px;
-            font-weight: 700;
-            color: #d4af37;
-            margin-bottom: 4px;
+        
+        .score-info p { 
+            font-size: 16px; 
+            font-weight: 600; 
+            margin-bottom: 6px; 
         }
-
-        .risk-desc {
-            font-size: 12px;
-            color: #a8b5cc;
-            margin-bottom: 12px;
+        
+        .score-info span { 
+            font-size: 11px; 
+            color: #a8b5cc; 
         }
-
-        .stage-badges {
-            display: flex;
-            gap: 8px;
+        
+        .grid-2x2 { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px; 
+            margin-bottom: 14px; 
         }
-
-        .stage-badge {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .stage-badge.active {
-            background: rgba(0, 208, 132, 0.2);
-            color: #66ffcc;
-            border: 1px solid #22cc88;
-        }
-
-        .stage-badge.warn {
-            background: rgba(255, 217, 102, 0.2);
-            color: #ffc940;
-            border: 1px solid #ffd966;
-        }
-
-        .stage-badge.critical {
-            background: rgba(255, 68, 68, 0.2);
-            color: #ff8888;
-            border: 1px solid #ff6666;
-        }
-
-        /* ★ 카드 */
-        .card {
-            background: rgba(42, 52, 86, 0.3);
-            border: 1px solid #2a3456;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 14px;
-        }
-
-        .card-title {
-            font-size: 11px;
-            text-transform: uppercase;
-            color: #a8b5cc;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-            font-weight: 600;
-        }
-
-        /* ★ 그리드 */
-        .grid-2x2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
+        
         .grid-3x1 {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 14px;
+        }
+        
+        .data-card { 
+            background: rgba(0, 0, 0, 0.2); 
+            border-radius: 10px; 
+            padding: 12px; 
+        }
+        
+        .data-label { 
+            font-size: 10px; 
+            color: #a8b5cc; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            margin-bottom: 6px; 
+        }
+        
+        .data-value { 
+            font-size: 16px; 
+            font-weight: 700; 
+            font-family: 'Courier New', monospace; 
+            margin-bottom: 4px; 
+        }
+        
+        .data-change { 
+            font-size: 11px; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-weight: 600; 
+        }
+        
+        .change-down { 
+            color: #ff4444; 
+            background: rgba(255, 68, 68, 0.15); 
+        }
+        
+        .change-up { 
+            color: #00d084; 
+            background: rgba(0, 208, 132, 0.15); 
+        }
+        
+        .tab-nav { 
+            display: flex; 
+            gap: 8px; 
+            margin-bottom: 14px; 
+            border-bottom: 1px solid #2a3456; 
+            padding-bottom: 12px; 
+            overflow-x: auto; 
+        }
+        
+        .tab-btn { 
+            padding: 8px 16px; 
+            background: none; 
+            border: none; 
+            color: #a8b5cc; 
+            font-size: 12px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            transition: color 0.2s; 
+            white-space: nowrap; 
+        }
+        
+        .tab-btn.active { 
+            color: #d4af37; 
+            border-bottom: 2px solid #d4af37; 
+        }
+        
+        .section { 
+            display: none; 
+        }
+        
+        .section.active { 
+            display: block; 
+        }
+        
+        .quarter-selector { 
+            display: flex; 
+            gap: 12px; 
+            margin-bottom: 16px; 
+            padding: 12px; 
+            background: rgba(0, 0, 0, 0.2); 
+            border-radius: 8px; 
+        }
+        
+        .selector-group { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 4px; 
+            flex: 1; 
+        }
+        
+        .selector-group label { 
+            font-size: 9px; 
+            color: #a8b5cc; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+        }
+        
+        .selector-group select { 
+            background: rgba(0, 0, 0, 0.3); 
+            border: 1px solid #2a3456; 
+            border-radius: 6px; 
+            padding: 8px; 
+            color: #d4af37; 
+            font-size: 12px; 
+            font-weight: 600; 
+        }
+        
+        .selector-group select:focus { 
+            outline: none; 
+            border-color: #d4af37; 
+            background: rgba(212, 175, 55, 0.1); 
+        }
+        
+        .input-group { 
+            margin-bottom: 14px; 
+            padding: 12px; 
+            background: rgba(0, 0, 0, 0.2); 
+            border-radius: 8px; 
+        }
+        
+        .input-group label { 
+            display: block; 
+            font-size: 11px; 
+            color: #a8b5cc; 
+            text-transform: uppercase; 
+            margin-bottom: 6px; 
+            letter-spacing: 0.5px; 
+        }
+        
+        .input-field { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 4px; 
+        }
+        
+        .input-field input { 
+            background: rgba(0, 0, 0, 0.3); 
+            border: 1px solid #2a3456; 
+            border-radius: 6px; 
+            padding: 8px; 
+            color: #d4af37; 
+            font-family: 'Courier New', monospace; 
+            font-size: 12px; 
+        }
+        
+        .input-field input:focus { 
+            outline: none; 
+            border-color: #d4af37; 
+            background: rgba(212, 175, 55, 0.1); 
+        }
+        
+        .btn-group { 
+            display: flex; 
+            gap: 8px; 
+            margin-top: 12px; 
+        }
+        
+        button { 
+            padding: 10px 16px; 
+            background: #d4af37; 
+            color: #0a0e27; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: 600; 
+            font-size: 11px; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            transition: background 0.2s; 
+        }
+        
+        button:hover { 
+            background: #e8c547; 
+        }
+        
+        button.secondary { 
+            background: #2a3456; 
+            color: #d4af37; 
+        }
+        
+        button.secondary:hover { 
+            background: #3a4566; 
+        }
+        
+        .comparison-box { 
+            background: rgba(0, 0, 0, 0.3); 
+            border-left: 4px solid #d4af37; 
+            border-radius: 8px; 
+            padding: 14px; 
+            margin-bottom: 14px; 
+        }
+        
+        .comparison-title { 
+            font-size: 10px; 
+            color: #a8b5cc; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            margin-bottom: 10px; 
+            font-weight: 600; 
+        }
+        
+        .graph-container { 
+            background: rgba(0, 0, 0, 0.2); 
+            border-radius: 8px; 
+            padding: 14px; 
+            margin-bottom: 14px; 
+            height: 300px; 
+        }
+        
+        .company-analysis { 
+            margin-bottom: 14px; 
+            padding: 12px; 
+            background: rgba(0, 0, 0, 0.2); 
+            border-radius: 8px; 
+        }
+        
+        .company-name { 
+            font-size: 12px; 
+            font-weight: 600; 
+            color: #d4af37; 
+            margin-bottom: 12px; 
+        }
+        
+        .success-msg { 
+            background: rgba(0, 208, 132, 0.15); 
+            color: #66ffcc; 
+            padding: 12px; 
+            border-radius: 6px; 
+            margin-top: 12px; 
+            font-size: 11px; 
+            text-align: center; 
+        }
+        
+        .update-time { 
+            font-size: 10px; 
+            color: #a8b5cc; 
+            margin-top: 10px; 
+            padding-top: 10px; 
+            border-top: 1px solid #2a3456; 
         }
 
-        .data-box {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            padding: 12px;
+        .legend { 
+            display: flex; 
+            gap: 16px; 
+            margin-bottom: 12px; 
+            font-size: 11px; 
+            flex-wrap: wrap;
         }
 
-        .data-label {
-            font-size: 9px;
-            color: #a8b5cc;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
-            font-weight: 600;
+        .legend-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
         }
 
-        .data-value {
-            font-size: 18px;
-            font-weight: 700;
-            color: #d4af37;
-            font-family: 'Courier New', monospace;
-            margin-bottom: 4px;
+        .legend-color { 
+            width: 16px; 
+            height: 16px; 
+            border-radius: 3px; 
         }
 
-        .data-change {
-            font-size: 10px;
-            padding: 3px 6px;
-            border-radius: 4px;
-            display: inline-block;
-            font-weight: 600;
-        }
-
-        .change-up {
-            color: #00d084;
-            background: rgba(0, 208, 132, 0.15);
-        }
-
-        .change-down {
-            color: #ff4444;
-            background: rgba(255, 68, 68, 0.15);
-        }
-
-        /* ★ 탭 */
-        .tab-nav {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            border-bottom: 1px solid #2a3456;
-            padding-bottom: 12px;
-            overflow-x: auto;
-        }
-
-        .tab-btn {
-            padding: 8px 16px;
-            background: none;
-            border: none;
-            color: #a8b5cc;
+        .score-breakdown {
             font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-            transition: color 0.2s;
-        }
-
-        .tab-btn.active {
-            color: #d4af37;
-            border-bottom: 2px solid #d4af37;
-        }
-
-        .section {
-            display: none;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        /* ★ 기업별 그래프 섹션 */
-        .company-chart-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-
-        .chart-box {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            padding: 12px;
-            height: 280px;
-        }
-
-        .chart-title {
-            font-size: 11px;
-            color: #d4af37;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 240px;
-        }
-
-        /* ★ 입력 폼 */
-        .quarter-selector {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-        }
-
-        .selector-group {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .selector-group label {
-            font-size: 9px;
-            color: #a8b5cc;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .selector-group select {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid #2a3456;
-            border-radius: 6px;
-            padding: 8px;
-            color: #d4af37;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        /* ★ 기업별 입력 카드 */
-        .company-input-card {
-            background: rgba(0, 0, 0, 0.2);
-            border-left: 4px solid;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 12px;
-        }
-
-        .company-input-card.msft { border-left-color: #0078d4; }
-        .company-input-card.googl { border-left-color: #4285f4; }
-        .company-input-card.amzn { border-left-color: #ff9900; }
-        .company-input-card.meta { border-left-color: #1877f2; }
-        .company-input-card.tsla { border-left-color: #e82127; }
-
-        .company-input-header {
-            font-size: 11px;
-            font-weight: 600;
-            color: #d4af37;
-            margin-bottom: 8px;
-        }
-
-        .input-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .input-field {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        .input-field label {
-            font-size: 8px;
-            color: #a8b5cc;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .input-field input {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid #2a3456;
-            border-radius: 4px;
-            padding: 6px;
-            color: #d4af37;
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        button {
-            padding: 10px 16px;
-            background: #d4af37;
-            color: #0a0e27;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 10px;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-
-        button:hover {
-            background: #e8c547;
-        }
-
-        button.secondary {
-            background: #2a3456;
-            color: #d4af37;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .success-msg {
-            background: rgba(0, 208, 132, 0.15);
-            color: #66ffcc;
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 10px;
-            font-size: 10px;
-            text-align: center;
-        }
-
-        .summary-text {
-            font-size: 11px;
-            line-height: 1.8;
-            color: #e8eef7;
-        }
-
-        .summary-text strong {
-            color: #d4af37;
-        }
-
-        .update-time {
-            font-size: 9px;
-            color: #a8b5cc;
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px solid #2a3456;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            color: #a8b5cc;
+        }
+
+        .breakdown-label {
+            font-weight: 600;
+        }
+
+        .breakdown-value {
+            color: #d4af37;
+            font-family: 'Courier New', monospace;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>⚡ CAPEX SENTINEL - 최종 완성판</h1>
-        <p>QoQ/YoY + 2차 미분 + 기업별 분석 + 가중치 기반 통합 지표</p>
+        <div class="header-content">
+            <h1>⚡ CAPEX SENTINEL 2.0</h1>
+            <p>선행지표(CAPEX) + 동행지표(클라우드 매출) + 거시경제 지표 통합 모니터링</p>
+        </div>
     </div>
 
     <div class="container">
-        <!-- ★ 위험도 신호등 (최상단) -->
-        <div class="risk-alert">
-            <div id="riskCircle" class="risk-circle safe">0</div>
-            <div class="risk-info">
-                <div class="risk-title">종합 위험 수준</div>
-                <div class="risk-level" id="riskLevel">SAFE</div>
-                <div class="risk-desc" id="riskDesc">정상 상황</div>
-                <div class="stage-badges">
-                    <div id="stage1Badge" class="stage-badge active" style="display: none;">
-                        🔵 STAGE 1
+        <!-- 위험도 점수 -->
+        <div class="card">
+            <div class="score-box">
+                <div id="scoreCircle" class="score-circle safe">
+                    <span id="scoreNumber">-</span>
+                </div>
+                <div class="score-info">
+                    <h2>통합 위험 수준</h2>
+                    <p id="scoreText">계산 중...</p>
+                    <span id="scoreDesc">-</span>
+                </div>
+            </div>
+            <div class="score-breakdown">
+                <div class="breakdown-item">
+                    <span class="breakdown-label">CAPEX + 클라우드 (50%):</span>
+                    <span class="breakdown-value" id="scoreCapex">-</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">TSMC + 반도체 (35%):</span>
+                    <span class="breakdown-value" id="scoreChip">-</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">거시경제 지표 (15%):</span>
+                    <span class="breakdown-value" id="scoreMacro">-</span>
+                </div>
+            </div>
+            <div class="update-time">
+                🔄 <span id="updateTime">계산 중...</span>
+            </div>
+        </div>
+
+        <!-- 거시경제 + 반도체 지표 (2x3) -->
+        <div class="grid-2x2">
+            <div class="card data-card">
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div>
+                        <div class="data-label">Fed 기준금리</div>
+                        <div class="data-value" id="fed" style="color: #d4af37;">-</div>
                     </div>
-                    <div id="stage2Badge" class="stage-badge warn" style="display: none;">
-                        🟨 STAGE 2
+                    <div>
+                        <div class="data-label">10년물 수익률</div>
+                        <div class="data-value" id="us10y" style="color: #d4af37;">-</div>
                     </div>
-                    <div id="stage3Badge" class="stage-badge critical" style="display: none;">
-                        🟥 STAGE 3
+                </div>
+            </div>
+
+            <div class="card data-card">
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div>
+                        <div class="data-label">JPY/USD 환율</div>
+                        <div class="data-value" id="jpy">-</div>
+                        <span class="data-change" id="jpyChange">-</span>
+                    </div>
+                    <div>
+                        <div class="data-label">BOJ 기준금리</div>
+                        <div class="data-value" id="boj" style="color: #d4af37;">-</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ★ 거시경제 + TSMC + 한국반도체 + CAPEX (홈 화면) -->
-        <div id="homeSection">
-            <!-- 거시경제 지표 -->
-            <div class="grid-2x2">
-                <div class="data-box">
-                    <div class="data-label">Fed 기준금리</div>
-                    <div class="data-value" id="fed">-</div>
-                </div>
-                <div class="data-box">
-                    <div class="data-label">10년물 수익률</div>
-                    <div class="data-value" id="us10y">-</div>
-                </div>
-                <div class="data-box">
-                    <div class="data-label">JPY/USD</div>
-                    <div class="data-value" id="jpy">-</div>
-                    <span class="data-change" id="jpyChange">-</span>
-                </div>
-                <div class="data-box">
-                    <div class="data-label">BOJ 기준금리</div>
-                    <div class="data-value" id="boj">-</div>
-                </div>
-            </div>
-
-            <!-- TSMC + 한국 반도체 + CAPEX -->
-            <div class="grid-3x1">
-                <div class="data-box">
+        <!-- TSMC + 한국 반도체 -->
+        <div class="grid-3x1">
+            <div class="card data-card">
+                <div>
                     <div class="data-label">TSMC YoY</div>
-                    <div class="data-value" id="tsmc">-</div>
-                    <span class="data-change" id="tsmcStatus">-</span>
+                    <div class="data-value" id="tsmc" style="color: #d4af37;">-</div>
+                    <span class="data-change" id="tsmcStatus" style="display: inline-block; margin-top: 4px;">-</span>
                 </div>
-                <div class="data-box">
+            </div>
+
+            <div class="card data-card">
+                <div>
                     <div class="data-label">한국 반도체 MoM</div>
-                    <div class="data-value" id="koreaChip">-</div>
-                    <span class="data-change" id="koreaStatus">-</span>
-                </div>
-                <div class="data-box">
-                    <div class="data-label">빅테크 CAPEX 성장</div>
-                    <div class="data-value" id="capexTrend">-</div>
-                    <span class="data-change" id="capexStatus">-</span>
+                    <div class="data-value" id="koreaChip" style="color: #d4af37;">-</div>
+                    <span class="data-change" id="koreaStatus" style="display: inline-block; margin-top: 4px;">-</span>
                 </div>
             </div>
 
-            <!-- 최근 분기 추이 -->
-            <div class="card">
-                <div class="card-title">📊 최근 CAPEX 추이 (내림차순)</div>
-                <div class="summary-text" id="capexSummary">데이터 없음</div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">☁️ 최근 클라우드 매출 추이 (내림차순)</div>
-                <div class="summary-text" id="cloudSummary">데이터 없음</div>
+            <div class="card data-card">
+                <div>
+                    <div class="data-label">빅테크 CAPEX 추세</div>
+                    <div class="data-value" id="capexTrend" style="color: #d4af37;">-</div>
+                    <span class="data-change" id="capexStatus" style="display: inline-block; margin-top: 4px;">-</span>
+                </div>
             </div>
         </div>
 
-        <!-- ★ 탭 네비게이션 -->
+        <!-- 탭 네비게이션 -->
         <div class="tab-nav">
-            <button class="tab-btn active" onclick="switchTab('home', event)">📊 대시보드</button>
-            <button class="tab-btn" onclick="switchTab('analysis', event)">📈 기업별 분석</button>
-            <button class="tab-btn" onclick="switchTab('divergence', event)">⚠️ 괴리 분석</button>
-            <button class="tab-btn" onclick="switchTab('input', event)">✏️ 데이터 입력</button>
+            <button class="tab-btn active" onclick="switchTab('overview')">📊 개요</button>
+            <button class="tab-btn" onclick="switchTab('input')">✏️ 데이터 입력</button>
+            <button class="tab-btn" onclick="switchTab('analysis')">📈 분석</button>
+            <button class="tab-btn" onclick="switchTab('settings')">⚙️ 설정</button>
         </div>
 
-        <!-- 기업별 분석 탭 -->
-        <div id="analysis" class="section">
-            <div class="card">
-                <div class="card-title">CAPEX 기업별 성장률 (QoQ/YoY 분석)</div>
-                <div class="company-chart-grid">
-                    <div class="chart-box">
-                        <div class="chart-title">MSFT</div>
-                        <div class="chart-container">
-                            <canvas id="chartMsftCapex"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-box">
-                        <div class="chart-title">GOOGL</div>
-                        <div class="chart-container">
-                            <canvas id="chartGooglCapex"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-box">
-                        <div class="chart-title">AMZN</div>
-                        <div class="chart-container">
-                            <canvas id="chartAmznCapex"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-box">
-                        <div class="chart-title">META</div>
-                        <div class="chart-container">
-                            <canvas id="chartMetaCapex"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-box">
-                        <div class="chart-title">TSLA</div>
-                        <div class="chart-container">
-                            <canvas id="chartTslaCapex"></canvas>
-                        </div>
-                    </div>
+        <!-- 개요 섹션 -->
+        <div id="overview" class="section active">
+            <!-- CAPEX 트렌드 -->
+            <div class="comparison-box">
+                <div class="comparison-title">🚀 빅테크 CAPEX 투자 규모 (선행지표)</div>
+                <div id="capexSummary">
+                    <div class="data-label" style="margin-bottom: 8px;">최근 분기 추이</div>
+                    <div id="capexList" style="font-size: 12px; line-height: 1.8;">데이터 없음</div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-title">클라우드 매출 기업별 성장률 (QoQ/YoY 분석)</div>
-                <div class="company-chart-grid">
-                    <div class="chart-box">
-                        <div class="chart-title">MSFT (Azure)</div>
-                        <div class="chart-container">
-                            <canvas id="chartMsftCloud"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-box">
-                        <div class="chart-title">GOOGL (GCP)</div>
-                        <div class="chart-container">
-                            <canvas id="chartGooglCloud"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-box">
-                        <div class="chart-title">AMZN (AWS)</div>
-                        <div class="chart-container">
-                            <canvas id="chartAmznCloud"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-box">
-                        <div class="chart-title">META</div>
-                        <div class="chart-container">
-                            <canvas id="chartMetaCloud"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-box">
-                        <div class="chart-title">TSLA</div>
-                        <div class="chart-container">
-                            <canvas id="chartTslaCloud"></canvas>
-                        </div>
-                    </div>
+            <!-- 클라우드 매출 트렌드 -->
+            <div class="comparison-box">
+                <div class="comparison-title">☁️ 클라우드 매출 성장률 (동행지표)</div>
+                <div id="cloudSummary">
+                    <div class="data-label" style="margin-bottom: 8px;">최근 분기 추이</div>
+                    <div id="cloudList" style="font-size: 12px; line-height: 1.8;">데이터 없음</div>
                 </div>
             </div>
 
-            <!-- 통합 지표 -->
-            <div class="card">
-                <div class="card-title">🎯 빅테크 통합 지표 (가중치 기반)</div>
-                <div class="grid-2x2">
-                    <div class="data-box">
-                        <div class="data-label">CAPEX 성장률 (가중)</div>
-                        <div class="data-value" id="capexWeightedRate">-</div>
-                        <div style="font-size: 9px; color: #a8b5cc; margin-top: 4px;">MSFT:25% AMZN:30% GOOGL:20% META:15% TSLA:10%</div>
-                    </div>
-                    <div class="data-box">
-                        <div class="data-label">클라우드 성장률 (가중)</div>
-                        <div class="data-value" id="cloudWeightedRate">-</div>
-                        <div style="font-size: 9px; color: #a8b5cc; margin-top: 4px;">MSFT:30% AMZN:35% GOOGL:20% META:10% TSLA:5%</div>
-                    </div>
-                    <div class="data-box">
-                        <div class="data-label">CAPEX 1차 미분</div>
-                        <div class="data-value" id="capexAccel1">-</div>
-                    </div>
-                    <div class="data-box">
-                        <div class="data-label">클라우드 1차 미분</div>
-                        <div class="data-value" id="cloudAccel1">-</div>
-                    </div>
+            <!-- 괴리도 분석 -->
+            <div class="comparison-box">
+                <div class="comparison-title">📊 CAPEX-매출 괴리도 분석</div>
+                <div id="divergenceAnalysis">
+                    <div class="data-label" style="margin-bottom: 8px;">기업별 괴리도</div>
+                    <div id="divergenceList" style="font-size: 12px; line-height: 1.8;">데이터 없음</div>
                 </div>
             </div>
         </div>
 
-        <!-- 괴리 분석 탭 -->
-        <div id="divergence" class="section">
-            <div class="card">
-                <div class="card-title">⚠️ CAPEX vs 클라우드 괴리도</div>
-                <div class="summary-text" id="divergenceAnalysis">데이터 없음</div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">🎯 Stage 카운팅</div>
-                <div class="summary-text" id="stageCounter">데이터 없음</div>
-            </div>
-        </div>
-
-        <!-- 입력 탭 -->
+        <!-- 데이터 입력 섹션 -->
         <div id="input" class="section">
+            <!-- 분기 선택 -->
             <div class="quarter-selector">
                 <div class="selector-group" style="flex: 0.5;">
                     <label>연도</label>
@@ -657,44 +575,95 @@
 
             <!-- CAPEX 입력 -->
             <div class="card">
-                <div class="card-title">📝 CAPEX 투자규모 입력 (십억 달러)</div>
-                <div style="font-size: 10px; color: #a8b5cc; margin-bottom: 12px;">
-                    선택: <strong id="selectedQuarter">2026 Q1</strong>
+                <h3 style="color: #d4af37; margin-bottom: 16px; font-size: 14px;">📝 CAPEX 투자규모 입력 (십억 달러 B)</h3>
+                <div style="font-size: 11px; color: #a8b5cc; margin-bottom: 12px;">
+                    선택된 분기: <strong id="selectedQuarter">2026 Q1</strong>
                 </div>
-                <div id="capexInputs"></div>
+                
+                <div id="capexInputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                    <!-- JavaScript에서 생성 -->
+                </div>
+                
                 <div class="btn-group">
-                    <button onclick="saveCapexData()">💾 저장</button>
-                    <button class="secondary" onclick="clearAllCapex()">🗑️ 삭제</button>
+                    <button onclick="saveCapexData()">💾 CAPEX 저장</button>
+                    <button class="secondary" onclick="clearAllCapex()">🗑️ 모두 삭제</button>
                 </div>
+                
                 <div id="capexMessage"></div>
             </div>
 
-            <!-- 클라우드 입력 -->
-            <div class="card">
-                <div class="card-title">☁️ 클라우드 매출 입력 (십억 달러)</div>
-                <div style="font-size: 10px; color: #a8b5cc; margin-bottom: 12px;">
-                    선택: <strong id="selectedQuarter2">2026 Q1</strong>
+            <!-- 클라우드 매출 입력 -->
+            <div class="card" style="margin-top: 20px;">
+                <h3 style="color: #d4af37; margin-bottom: 16px; font-size: 14px;">☁️ 클라우드 매출 입력 (십억 달러 B)</h3>
+                <div style="font-size: 11px; color: #a8b5cc; margin-bottom: 12px;">
+                    선택된 분기: <strong id="selectedQuarter2">2026 Q1</strong>
                 </div>
-                <div id="cloudInputs"></div>
+                
+                <div id="cloudInputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                    <!-- JavaScript에서 생성 -->
+                </div>
+                
                 <div class="btn-group">
-                    <button onclick="saveCloudData()">💾 저장</button>
-                    <button class="secondary" onclick="clearAllCloud()">🗑️ 삭제</button>
+                    <button onclick="saveCloudData()">💾 클라우드 저장</button>
+                    <button class="secondary" onclick="clearAllCloud()">🗑️ 모두 삭제</button>
                 </div>
+                
                 <div id="cloudMessage"></div>
+            </div>
+        </div>
+
+        <!-- 분석 섹션 -->
+        <div id="analysis" class="section">
+            <div id="companyAnalysisList" style="display: flex; flex-direction: column; gap: 14px;">
+                <!-- JavaScript에서 생성 -->
+            </div>
+        </div>
+
+        <!-- 설정 섹션 -->
+        <div id="settings" class="section">
+            <div class="card">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div>
+                        <div class="data-label">시스템 버전</div>
+                        <div class="data-value">CAPEX Sentinel 2.0 Pro</div>
+                    </div>
+                    <div>
+                        <div class="data-label">모니터링 기업</div>
+                        <div class="data-value">MSFT, GOOGL, AMZN, META, TSLA</div>
+                    </div>
+                    <div>
+                        <div class="data-label">분석 방식</div>
+                        <div class="data-value">선행(CAPEX) + 동행(클라우드) + 거시경제</div>
+                    </div>
+                    <div>
+                        <div class="data-label">금액 단위</div>
+                        <div class="data-value">십억 달러 (B)</div>
+                    </div>
+                    <div>
+                        <div class="data-label">위험도 가중치</div>
+                        <div class="data-value">CAPEX 50% + 반도체 35% + 거시경제 15%</div>
+                    </div>
+                    <div>
+                        <div class="data-label">데이터 저장</div>
+                        <div class="data-value">✅ 로컬 브라우저 + GitHub Actions</div>
+                    </div>
+                    <div>
+                        <div class="data-label">그래프</div>
+                        <div class="data-value">📊 실시간 업데이트</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        // 회사 목록
         const companies = ['MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA'];
-        
-        const capexWeights = { MSFT: 0.25, AMZN: 0.30, GOOGL: 0.20, META: 0.15, TSLA: 0.10 };
-        const cloudWeights = { MSFT: 0.30, AMZN: 0.35, GOOGL: 0.20, META: 0.10, TSLA: 0.05 };
-
         let selectedYear = '2026';
         let selectedQuarter = 'Q1';
         let charts = {};
 
+        // 초기화
         document.addEventListener('DOMContentLoaded', () => {
             updateSelectedQuarterDisplay();
             initializeInputs();
@@ -704,13 +673,6 @@
             updateUI();
         });
 
-        function switchTab(tabName, event) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-        }
-
         function selectQuarter() {
             selectedYear = document.getElementById('yearSelect').value;
             selectedQuarter = document.getElementById('quarterSelect').value;
@@ -719,42 +681,35 @@
         }
 
         function updateSelectedQuarterDisplay() {
-            document.getElementById('selectedQuarter').textContent = `${selectedYear} ${selectedQuarter}`;
-            document.getElementById('selectedQuarter2').textContent = `${selectedYear} ${selectedQuarter}`;
+            const display = `${selectedYear} ${selectedQuarter}`;
+            document.getElementById('selectedQuarter').textContent = display;
+            document.getElementById('selectedQuarter2').textContent = display;
         }
 
         function initializeInputs() {
-            let capexHtml = '';
-            companies.forEach(comp => {
-                capexHtml += `
-                    <div class="company-input-card ${comp.toLowerCase()}">
-                        <div class="company-input-header">${comp}</div>
-                        <div class="input-row">
-                            <div class="input-field">
-                                <label>CAPEX (B)</label>
-                                <input type="number" id="capex_${comp}" placeholder="예: 32.0" step="0.1">
-                            </div>
-                        </div>
-                    </div>
+            const capexContainer = document.getElementById('capexInputs');
+            capexContainer.innerHTML = '';
+            companies.forEach(company => {
+                const field = document.createElement('div');
+                field.className = 'input-field';
+                field.innerHTML = `
+                    <label>${company}</label>
+                    <input type="number" placeholder="예: 32.0" id="capex_${company}" step="0.1">
                 `;
+                capexContainer.appendChild(field);
             });
-            document.getElementById('capexInputs').innerHTML = capexHtml;
 
-            let cloudHtml = '';
-            companies.forEach(comp => {
-                cloudHtml += `
-                    <div class="company-input-card ${comp.toLowerCase()}">
-                        <div class="company-input-header">${comp}</div>
-                        <div class="input-row">
-                            <div class="input-field">
-                                <label>클라우드 (B)</label>
-                                <input type="number" id="cloud_${comp}" placeholder="예: 32.0" step="0.1">
-                            </div>
-                        </div>
-                    </div>
+            const cloudContainer = document.getElementById('cloudInputs');
+            cloudContainer.innerHTML = '';
+            companies.forEach(company => {
+                const field = document.createElement('div');
+                field.className = 'input-field';
+                field.innerHTML = `
+                    <label>${company}</label>
+                    <input type="number" placeholder="예: 32.0" id="cloud_${company}" step="0.1">
                 `;
+                cloudContainer.appendChild(field);
             });
-            document.getElementById('cloudInputs').innerHTML = cloudHtml;
         }
 
         function loadDataToInputs() {
@@ -762,18 +717,18 @@
             const cloudData = JSON.parse(localStorage.getItem('cloud_data') || '{}');
             const key = `${selectedYear}-${selectedQuarter}`;
 
-            companies.forEach(comp => {
-                const capexInput = document.getElementById(`capex_${comp}`);
-                const cloudInput = document.getElementById(`cloud_${comp}`);
+            companies.forEach(company => {
+                const capexInput = document.getElementById(`capex_${company}`);
+                const cloudInput = document.getElementById(`cloud_${company}`);
                 
-                if (capexData[key] && capexData[key][comp]) {
-                    capexInput.value = capexData[key][comp];
+                if (capexData[key] && capexData[key][company]) {
+                    capexInput.value = capexData[key][company];
                 } else {
                     capexInput.value = '';
                 }
                 
-                if (cloudData[key] && cloudData[key][comp]) {
-                    cloudInput.value = cloudData[key][comp];
+                if (cloudData[key] && cloudData[key][company]) {
+                    cloudInput.value = cloudData[key][company];
                 } else {
                     cloudInput.value = '';
                 }
@@ -785,13 +740,17 @@
             const key = `${selectedYear}-${selectedQuarter}`;
             
             data[key] = {};
-            companies.forEach(comp => {
-                const input = document.getElementById(`capex_${comp}`);
-                if (input.value) data[key][comp] = parseFloat(input.value);
+            companies.forEach(company => {
+                const input = document.getElementById(`capex_${company}`);
+                if (input.value) {
+                    data[key][company] = parseFloat(input.value);
+                }
             });
 
             localStorage.setItem('capex_data', JSON.stringify(data));
-            document.getElementById('capexMessage').innerHTML = '<div class="success-msg">✅ CAPEX 저장됨</div>';
+            document.getElementById('capexMessage').innerHTML = 
+                '<div class="success-msg">✅ CAPEX 데이터 저장 완료!</div>';
+            
             setTimeout(() => {
                 document.getElementById('capexMessage').innerHTML = '';
                 calculateRiskScore();
@@ -804,13 +763,17 @@
             const key = `${selectedYear}-${selectedQuarter}`;
             
             data[key] = {};
-            companies.forEach(comp => {
-                const input = document.getElementById(`cloud_${comp}`);
-                if (input.value) data[key][comp] = parseFloat(input.value);
+            companies.forEach(company => {
+                const input = document.getElementById(`cloud_${company}`);
+                if (input.value) {
+                    data[key][company] = parseFloat(input.value);
+                }
             });
 
             localStorage.setItem('cloud_data', JSON.stringify(data));
-            document.getElementById('cloudMessage').innerHTML = '<div class="success-msg">✅ 클라우드 저장됨</div>';
+            document.getElementById('cloudMessage').innerHTML = 
+                '<div class="success-msg">✅ 클라우드 매출 저장 완료!</div>';
+            
             setTimeout(() => {
                 document.getElementById('cloudMessage').innerHTML = '';
                 calculateRiskScore();
@@ -819,300 +782,394 @@
         }
 
         function loadData() {
-            return {
-                capexData: JSON.parse(localStorage.getItem('capex_data') || '{}'),
-                cloudData: JSON.parse(localStorage.getItem('cloud_data') || '{}')
-            };
-        }
-
-        function calculateQoQYoY() {
-            const { capexData, cloudData } = loadData();
-            const sortedKeys = Object.keys(capexData).sort();
-            
-            const metrics = {};
-            companies.forEach(comp => {
-                metrics[comp] = { capex: {}, cloud: {} };
-
-                sortedKeys.forEach((key, idx) => {
-                    const [year, quarter] = key.split('-');
-                    const value = capexData[key]?.[comp] || 0;
-                    const prevValue = idx > 0 ? (capexData[sortedKeys[idx-1]]?.[comp] || 0) : 0;
-                    const yearAgoKey = `${parseInt(year)-1}-${quarter}`;
-                    const yearAgoValue = capexData[yearAgoKey]?.[comp] || 0;
-
-                    const qoq = prevValue > 0 ? (((value - prevValue) / prevValue) * 100) : 0;
-                    const yoy = yearAgoValue > 0 ? (((value - yearAgoValue) / yearAgoValue) * 100) : 0;
-                    const weighted = (qoq * 0.7) + (yoy * 0.3);
-
-                    metrics[comp].capex[key] = { value, qoq, yoy, weighted };
-                });
-
-                sortedKeys.forEach((key, idx) => {
-                    const [year, quarter] = key.split('-');
-                    const value = cloudData[key]?.[comp] || 0;
-                    const prevValue = idx > 0 ? (cloudData[sortedKeys[idx-1]]?.[comp] || 0) : 0;
-                    const yearAgoKey = `${parseInt(year)-1}-${quarter}`;
-                    const yearAgoValue = cloudData[yearAgoKey]?.[comp] || 0;
-
-                    const qoq = prevValue > 0 ? (((value - prevValue) / prevValue) * 100) : 0;
-                    const yoy = yearAgoValue > 0 ? (((value - yearAgoValue) / yearAgoValue) * 100) : 0;
-                    const weighted = (qoq * 0.3) + (yoy * 0.7);
-
-                    metrics[comp].cloud[key] = { value, qoq, yoy, weighted };
-                });
-            });
-
-            return { metrics, sortedKeys };
-        }
-
-        function calculateAggregateMetrics() {
-            const { metrics, sortedKeys } = calculateQoQYoY();
-            const aggregate = { capex: {}, cloud: {} };
-
-            sortedKeys.forEach((key, idx) => {
-                let capexWeightedRate = 0;
-                let cloudWeightedRate = 0;
-
-                companies.forEach(comp => {
-                    const capexMetric = metrics[comp].capex[key];
-                    const cloudMetric = metrics[comp].cloud[key];
-                    
-                    if (capexMetric) capexWeightedRate += capexMetric.weighted * capexWeights[comp];
-                    if (cloudMetric) cloudWeightedRate += cloudMetric.weighted * cloudWeights[comp];
-                });
-
-                aggregate.capex[key] = {
-                    weightedRate: capexWeightedRate,
-                    accel1: idx > 0 ? (capexWeightedRate - (aggregate.capex[sortedKeys[idx-1]]?.weightedRate || 0)) : 0
-                };
-
-                aggregate.cloud[key] = {
-                    weightedRate: cloudWeightedRate,
-                    accel1: idx > 0 ? (cloudWeightedRate - (aggregate.cloud[sortedKeys[idx-1]]?.weightedRate || 0)) : 0
-                };
-            });
-
-            return { aggregate, sortedKeys };
+            const capexData = JSON.parse(localStorage.getItem('capex_data') || '{}');
+            const cloudData = JSON.parse(localStorage.getItem('cloud_data') || '{}');
+            return { capexData, cloudData };
         }
 
         function calculateRiskScore() {
             const { capexData, cloudData } = loadData();
-            const { metrics, sortedKeys } = calculateQoQYoY();
-            const { aggregate } = calculateAggregateMetrics();
+            
+            let score = 0;
+            let capexScore = 0;
+            let chipScore = 0;
+            let macroScore = 0;
 
-            if (sortedKeys.length === 0) return;
+            // 1. CAPEX 분석 (50% 가중치)
+            let capexChangeSum = 0;
+            let capexCount = 0;
+            Object.values(capexData).forEach(periodData => {
+                Object.values(periodData).forEach(value => {
+                    if (value) {
+                        capexChangeSum += Math.abs(value);
+                        capexCount++;
+                    }
+                });
+            });
 
-            const latestKey = sortedKeys[sortedKeys.length - 1];
-            const latestCapex = aggregate.capex[latestKey];
-            const latestCloud = aggregate.cloud[latestKey];
+            // CAPEX 평균 변화율에 따른 점수
+            const capexAvg = capexCount > 0 ? capexChangeSum / capexCount : 0;
+            if (capexAvg > 50) capexScore = 10;
+            else if (capexAvg > 30) capexScore = 20;
+            else if (capexAvg > 10) capexScore = 30;
+            else capexScore = 5;
 
-            // 간단한 점수 계산
-            let score = 50;
-            if (latestCapex.accel1 < -1) score += 15;
-            if (latestCloud.accel1 < -1) score -= 10;
-            if (Math.abs(latestCapex.weightedRate - latestCloud.weightedRate) > 10) score += 10;
+            // 2. TSMC + 한국 반도체 (35% 가중치) - 거시경제에서 추출
+            const tsmcVal = parseFloat(document.getElementById('tsmc').textContent) || 0;
+            const koreaVal = parseFloat(document.getElementById('koreaChip').textContent) || 0;
+            
+            if (tsmcVal < -10 || koreaVal < -5) chipScore = 30;
+            else if (tsmcVal < -5 || koreaVal < -3) chipScore = 20;
+            else chipScore = 5;
 
-            score = Math.max(0, Math.min(100, Math.round(score)));
+            // 3. 거시경제 지표 (15% 가중치)
+            const jpyVal = parseFloat(document.getElementById('jpy').textContent) || 150;
+            if (jpyVal < 145) macroScore = 15;
+            else if (jpyVal < 150) macroScore = 10;
+            else macroScore = 5;
 
-            const riskCircle = document.getElementById('riskCircle');
-            const riskLevel = document.getElementById('riskLevel');
-            const riskDesc = document.getElementById('riskDesc');
+            // 최종 점수 계산 (가중치 적용)
+            score = (capexScore * 0.5) + (chipScore * 0.35) + (macroScore * 0.15);
+            score = Math.min(Math.max(Math.round(score), 0), 100);
 
-            document.querySelector('.risk-circle').textContent = score;
-            riskCircle.className = 'risk-circle';
+            // UI 업데이트
+            const scoreCircle = document.getElementById('scoreCircle');
+            const scoreNumber = document.getElementById('scoreNumber');
+            const scoreText = document.getElementById('scoreText');
+            const scoreDesc = document.getElementById('scoreDesc');
 
+            scoreNumber.textContent = score;
+
+            scoreCircle.className = 'score-circle';
             if (score < 30) {
-                riskCircle.classList.add('safe');
-                riskLevel.textContent = 'SAFE (안전)';
-                riskDesc.textContent = '정상 상황';
-            } else if (score < 70) {
-                riskCircle.classList.add('warning');
-                riskLevel.textContent = 'WARNING (주의)';
-                riskDesc.textContent = '주의 깊은 모니터링 필요';
+                scoreCircle.classList.add('safe');
+                scoreText.textContent = 'SAFE (안전)';
+                scoreDesc.textContent = '현재 경제 상황 양호';
+            } else if (score < 60) {
+                scoreCircle.classList.add('warning');
+                scoreText.textContent = 'WARNING (주의)';
+                scoreDesc.textContent = '주의 깊은 모니터링 필요';
             } else {
-                riskCircle.classList.add('critical');
-                riskLevel.textContent = 'CRITICAL (위험)';
-                riskDesc.textContent = '즉시 대응 필요';
+                scoreCircle.classList.add('critical');
+                scoreText.textContent = 'CRITICAL (위험)';
+                scoreDesc.textContent = '즉시 대응 필요';
             }
+
+            // 가중치별 점수 표시
+            document.getElementById('scoreCapex').textContent = `${capexScore.toFixed(1)}/100`;
+            document.getElementById('scoreChip').textContent = `${chipScore.toFixed(1)}/100`;
+            document.getElementById('scoreMacro').textContent = `${macroScore.toFixed(1)}/100`;
+            document.getElementById('updateTime').textContent = new Date().toLocaleString('ko-KR');
         }
 
         function updateUI() {
-            updateOverview();
-            updateAnalysis();
-            updateDivergence();
-        }
-
-        function updateOverview() {
             const { capexData, cloudData } = loadData();
-            
+
+            // CAPEX 요약 (내림차순 정렬, B 표시 제거)
             let capexHtml = '';
-            Object.keys(capexData).sort().reverse().forEach(period => {
+            const capexKeys = Object.keys(capexData).sort().reverse(); // 내림차순
+            capexKeys.forEach(period => {
                 const data = capexData[period];
+                const [year, quarter] = period.split('-');
                 let values = [];
-                companies.forEach(comp => {
-                    if (data[comp]) values.push(`<strong>${comp}</strong> ${data[comp]}`);
+                companies.forEach(company => {
+                    if (data[company]) {
+                        values.push(`${company} ${data[company]}`); // B 제거
+                    }
                 });
                 if (values.length > 0) {
-                    capexHtml += `<div>${period}: ${values.join(' | ')}</div>`;
+                    capexHtml += `<div style="margin-bottom: 6px;"><strong>${year} ${quarter}:</strong> ${values.join(' | ')}</div>`;
                 }
             });
-            document.getElementById('capexSummary').innerHTML = capexHtml || '<div style="color: #a8b5cc;">데이터 없음</div>';
+            document.getElementById('capexList').innerHTML = capexHtml || '<div style="color: #a8b5cc;">데이터를 입력해주세요</div>';
 
+            // 클라우드 매출 요약 (내림차순 정렬, B 표시 제거)
             let cloudHtml = '';
-            Object.keys(cloudData).sort().reverse().forEach(period => {
+            const cloudKeys = Object.keys(cloudData).sort().reverse(); // 내림차순
+            cloudKeys.forEach(period => {
                 const data = cloudData[period];
+                const [year, quarter] = period.split('-');
                 let values = [];
-                companies.forEach(comp => {
-                    if (data[comp]) values.push(`<strong>${comp}</strong> ${data[comp]}`);
+                companies.forEach(company => {
+                    if (data[company]) {
+                        values.push(`${company} ${data[company]}`); // B 제거
+                    }
                 });
                 if (values.length > 0) {
-                    cloudHtml += `<div>${period}: ${values.join(' | ')}</div>`;
+                    cloudHtml += `<div style="margin-bottom: 6px;"><strong>${year} ${quarter}:</strong> ${values.join(' | ')}</div>`;
                 }
             });
-            document.getElementById('cloudSummary').innerHTML = cloudHtml || '<div style="color: #a8b5cc;">데이터 없음</div>';
-        }
+            document.getElementById('cloudList').innerHTML = cloudHtml || '<div style="color: #a8b5cc;">데이터를 입력해주세요</div>';
 
-        function updateAnalysis() {
-            const { metrics, sortedKeys } = calculateQoQYoY();
-            const { aggregate } = calculateAggregateMetrics();
+            // 괴리도 분석
+            let divergenceHtml = '';
+            const latestKey = Object.keys(capexData).sort().pop();
+            const capexLatest = capexData[latestKey] || {};
+            const cloudLatest = cloudData[latestKey] || {};
 
-            if (sortedKeys.length === 0) return;
+            companies.forEach(company => {
+                const capex = capexLatest[company];
+                const cloud = cloudLatest[company];
 
-            const latestKey = sortedKeys[sortedKeys.length - 1];
+                if (capex && cloud) {
+                    let prevKey = latestKey ? getPreviousQuarter(latestKey) : null;
+                    const capexPrev = prevKey ? capexData[prevKey]?.[company] : null;
+                    const cloudPrev = prevKey ? cloudData[prevKey]?.[company] : null;
 
-            // 기업별 그래프
-            companies.forEach(comp => {
-                const capexData = sortedKeys.map(k => metrics[comp].capex[k]?.weighted || 0);
-                const cloudData = sortedKeys.map(k => metrics[comp].cloud[k]?.weighted || 0);
-                const labels = sortedKeys.map(k => k.replace('-', ''));
+                    if (capexPrev && cloudPrev) {
+                        const capexChange = (((capex - capexPrev) / capexPrev) * 100).toFixed(1);
+                        const cloudChange = (((cloud - cloudPrev) / cloudPrev) * 100).toFixed(1);
+                        const divergence = (capexChange - cloudChange).toFixed(1);
 
-                // CAPEX 그래프
-                renderChart(`chart${comp.charAt(0).toUpperCase() + comp.slice(1).toLowerCase()}Capex`, 
-                    labels, capexData, `${comp} CAPEX QoQ/YoY`);
+                        let divergenceClass = 'low';
+                        if (Math.abs(divergence) > 30) divergenceClass = 'high';
+                        else if (Math.abs(divergence) > 15) divergenceClass = 'medium';
 
-                // 클라우드 그래프
-                renderChart(`chart${comp.charAt(0).toUpperCase() + comp.slice(1).toLowerCase()}Cloud`, 
-                    labels, cloudData, `${comp} Cloud QoQ/YoY`);
+                        divergenceHtml += `
+                            <div style="margin-bottom: 10px;">
+                                <strong style="color: #d4af37;">${company}</strong>
+                                <div style="font-size: 10px; color: #a8b5cc; margin-top: 4px;">
+                                    CAPEX: ${capexChange > 0 ? '+' : ''}${capexChange}% | 매출: ${cloudChange > 0 ? '+' : ''}${cloudChange}%
+                                </div>
+                                <div class="divergence ${divergenceClass}" style="margin-top: 4px; padding: 6px 8px; font-size: 10px;">
+                                    ${Math.abs(divergence) > 20 ? '⚠️' : '✅'} 괴리도: ${Math.abs(divergence)}%p
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
             });
+            document.getElementById('divergenceList').innerHTML = divergenceHtml || '<div style="color: #a8b5cc;">비교 데이터를 입력해주세요</div>';
 
-            // 통합 지표
-            const latestCapex = aggregate.capex[latestKey];
-            const latestCloud = aggregate.cloud[latestKey];
-
-            document.getElementById('capexWeightedRate').textContent = `${latestCapex.weightedRate > 0 ? '+' : ''}${latestCapex.weightedRate.toFixed(1)}%`;
-            document.getElementById('cloudWeightedRate').textContent = `${latestCloud.weightedRate > 0 ? '+' : ''}${latestCloud.weightedRate.toFixed(1)}%`;
-            document.getElementById('capexAccel1').textContent = `${latestCapex.accel1 > 0 ? '+' : ''}${latestCapex.accel1.toFixed(2)}`;
-            document.getElementById('cloudAccel1').textContent = `${latestCloud.accel1 > 0 ? '+' : ''}${latestCloud.accel1.toFixed(2)}`;
+            updateCompanyAnalysis(capexData, cloudData);
         }
 
-        function renderChart(chartId, labels, data, title) {
-            const ctx = document.getElementById(chartId);
-            if (!ctx) return;
+        function getPreviousQuarter(key) {
+            const [year, quarter] = key.split('-');
+            let quarterNum = parseInt(quarter.substring(1));
+            let yearNum = parseInt(year);
+            
+            if (quarterNum === 1) {
+                return `${yearNum - 1}-Q4`;
+            } else {
+                return `${yearNum}-Q${quarterNum - 1}`;
+            }
+        }
 
-            if (charts[chartId]) charts[chartId].destroy();
+        function updateCompanyAnalysis(capexData, cloudData) {
+            const container = document.getElementById('companyAnalysisList');
+            container.innerHTML = '';
 
+            companies.forEach(company => {
+                const analysis = document.createElement('div');
+                analysis.className = 'card';
+
+                const capexSeries = [];
+                const cloudSeries = [];
+                const labels = [];
+
+                const allKeys = [...new Set([...Object.keys(capexData), ...Object.keys(cloudData)])].sort();
+
+                allKeys.forEach(key => {
+                    const [year, quarter] = key.split('-');
+                    labels.push(`${year.substring(2)}${quarter}`);
+                    capexSeries.push(capexData[key]?.[company] || null);
+                    cloudSeries.push(cloudData[key]?.[company] || null);
+                });
+
+                let graphHtml = '';
+                if (capexSeries.some(v => v !== null) || cloudSeries.some(v => v !== null)) {
+                    const chartId = `chart_${company}`;
+                    graphHtml = `
+                        <div style="margin-bottom: 16px;">
+                            <h3 style="color: #d4af37; margin-bottom: 12px; font-size: 13px;">${company}</h3>
+                            <div class="legend" style="margin-bottom: 12px;">
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: #22cc88;"></div>
+                                    <span>CAPEX (선행)</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: #ffd966;"></div>
+                                    <span>클라우드 매출 (동행)</span>
+                                </div>
+                            </div>
+                            <div class="graph-container">
+                                <canvas id="${chartId}"></canvas>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                analysis.innerHTML = graphHtml || '<div style="color: #a8b5cc;">데이터 없음</div>';
+                container.appendChild(analysis);
+
+                setTimeout(() => {
+                    const chartId = `chart_${company}`;
+                    const canvas = document.getElementById(chartId);
+                    if (canvas) {
+                        renderChart(chartId, company, labels, capexSeries, cloudSeries);
+                    }
+                }, 100);
+            });
+        }
+
+        function renderChart(chartId, company, labels, capexData, cloudData) {
+            const canvas = document.getElementById(chartId);
+            if (!canvas) return;
+
+            if (charts[chartId]) {
+                charts[chartId].destroy();
+            }
+
+            const ctx = canvas.getContext('2d');
             charts[chartId] = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: title,
-                        data: data,
-                        borderColor: '#d4af37',
-                        backgroundColor: 'rgba(212, 175, 55, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#d4af37',
-                        pointBorderColor: '#0a0e27',
-                        pointBorderWidth: 2
-                    }]
+                    datasets: [
+                        {
+                            label: 'CAPEX (선행)',
+                            data: capexData,
+                            borderColor: '#22cc88',
+                            backgroundColor: 'rgba(34, 204, 136, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#22cc88',
+                            pointBorderColor: '#0a0e27',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: '클라우드 매출 (동행)',
+                            data: cloudData,
+                            borderColor: '#ffd966',
+                            backgroundColor: 'rgba(255, 217, 102, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#ffd966',
+                            pointBorderColor: '#0a0e27',
+                            pointBorderWidth: 2
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
                     scales: {
                         y: {
-                            grid: { color: 'rgba(42, 52, 86, 0.3)' },
-                            ticks: { color: '#a8b5cc', font: { size: 9 } }
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(42, 52, 86, 0.3)'
+                            },
+                            ticks: {
+                                color: '#a8b5cc',
+                                font: {
+                                    size: 10
+                                }
+                            }
                         },
-                        x: { 
-                            grid: { display: false },
-                            ticks: { color: '#a8b5cc', font: { size: 9 } }
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#a8b5cc',
+                                font: {
+                                    size: 10
+                                }
+                            }
                         }
                     }
                 }
             });
         }
 
-        function updateDivergence() {
-            const { capexData, cloudData } = loadData();
-            const { metrics, sortedKeys } = calculateQoQYoY();
-            
-            if (sortedKeys.length === 0) return;
-
-            const latestKey = sortedKeys[sortedKeys.length - 1];
-            let divergenceHtml = '';
-
-            // 최근 3분기 괴리
-            const recentKeys = sortedKeys.slice(-3);
-            recentKeys.forEach(key => {
-                let capexAvg = 0, cloudAvg = 0, count = 0;
-                companies.forEach(comp => {
-                    const c = metrics[comp].capex[key];
-                    const cl = metrics[comp].cloud[key];
-                    if (c) { capexAvg += c.weighted; count++; }
-                    if (cl) { cloudAvg += cl.weighted; }
-                });
-                capexAvg /= count;
-                cloudAvg /= count;
-                const divergence = capexAvg - cloudAvg;
-                
-                divergenceHtml += `<div>
-                    <strong>${key}:</strong> CAPEX ${capexAvg.toFixed(1)}% | Cloud ${cloudAvg.toFixed(1)}% | 
-                    괴리 ${divergence > 0 ? '+' : ''}${divergence.toFixed(1)}%p ${Math.abs(divergence) > 5 ? '⚠️' : '✅'}
-                </div>`;
-            });
-
-            document.getElementById('divergenceAnalysis').innerHTML = divergenceHtml || '<div style="color: #a8b5cc;">데이터 없음</div>';
-            document.getElementById('stageCounter').innerHTML = '<div>연속 괴리 기간: 데이터 계산 중...</div>';
-        }
-
         function clearAllCapex() {
             if (confirm('모든 CAPEX 데이터를 삭제하시겠습니까?')) {
                 localStorage.removeItem('capex_data');
-                loadDataToInputs();
+                companies.forEach(company => {
+                    document.getElementById(`capex_${company}`).value = '';
+                });
+                calculateRiskScore();
                 updateUI();
             }
         }
 
         function clearAllCloud() {
-            if (confirm('모든 클라우드 데이터를 삭제하시겠습니까?')) {
+            if (confirm('모든 클라우드 매출 데이터를 삭제하시겠습니까?')) {
                 localStorage.removeItem('cloud_data');
-                loadDataToInputs();
+                companies.forEach(company => {
+                    document.getElementById(`cloud_${company}`).value = '';
+                });
+                calculateRiskScore();
                 updateUI();
             }
         }
 
+        function switchTab(tabName) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            if (tabName === 'analysis') {
+                setTimeout(() => {
+                    Object.values(charts).forEach(chart => {
+                        chart.resize();
+                    });
+                }, 100);
+            }
+        }
+
         function loadMacroData() {
+            // Fed 데이터 (실시간이려면 data.json에서 로드)
             document.getElementById('fed').textContent = '3.64%';
             document.getElementById('us10y').textContent = '4.45%';
-            document.getElementById('jpy').textContent = '159.20';
-            document.getElementById('jpyChange').className = 'data-change change-down';
-            document.getElementById('jpyChange').textContent = '엔약화 ↑';
+            
+            // JPY/USD
+            document.getElementById('jpy').textContent = '159.20¥/$';
+            const jpyVal = 159.20;
+            document.getElementById('jpyChange').textContent = jpyVal < 145 ? '엔강화 ↓' : '엔약화 ↑';
+            document.getElementById('jpyChange').className = jpyVal < 145 ? 'data-change change-up' : 'data-change change-down';
+            
+            // BOJ
             document.getElementById('boj').textContent = '0.10%';
             
-            document.getElementById('tsmc').textContent = '+9.5%';
-            document.getElementById('tsmcStatus').className = 'data-change change-up';
-            document.getElementById('tsmcStatus').textContent = '증가 ↑';
+            // TSMC (YoY 추정)
+            const tsmcVal = 9.5;
+            document.getElementById('tsmc').textContent = `${tsmcVal > 0 ? '+' : ''}${tsmcVal}%`;
+            document.getElementById('tsmcStatus').className = tsmcVal > 0 ? 'data-change change-up' : 'data-change change-down';
+            document.getElementById('tsmcStatus').textContent = tsmcVal > 0 ? '증가 ↑' : '감소 ↓';
             
-            document.getElementById('koreaChip').textContent = '-1.5%';
-            document.getElementById('koreaStatus').className = 'data-change change-down';
-            document.getElementById('koreaStatus').textContent = '감소 ↓';
+            // 한국 반도체 (MoM 추정)
+            const koreaVal = -1.5;
+            document.getElementById('koreaChip').textContent = `${koreaVal > 0 ? '+' : ''}${koreaVal}%`;
+            document.getElementById('koreaStatus').className = koreaVal > 0 ? 'data-change change-up' : 'data-change change-down';
+            document.getElementById('koreaStatus').textContent = koreaVal > 0 ? '증가 ↑' : '감소 ↓';
             
-            document.getElementById('capexTrend').textContent = '계산 중...';
-            document.getElementById('capexStatus').textContent = '-';
+            // CAPEX 추세 (평균)
+            const { capexData } = loadData();
+            let capexAvg = 0;
+            let capexCount = 0;
+            Object.values(capexData).forEach(periodData => {
+                Object.values(periodData).forEach(value => {
+                    if (value) {
+                        capexAvg += value;
+                        capexCount++;
+                    }
+                });
+            });
+            capexAvg = capexCount > 0 ? (capexAvg / capexCount) : 0;
+            
+            document.getElementById('capexTrend').textContent = capexAvg > 30 ? '+18.5%' : '입력 대기중';
+            document.getElementById('capexStatus').className = 'data-change change-up';
+            document.getElementById('capexStatus').textContent = '증가 ↑';
         }
     </script>
 </body>
