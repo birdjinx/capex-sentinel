@@ -865,14 +865,16 @@
         function updateUI() {
             const { capexData, cloudData } = loadData();
 
-            // CAPEX 요약
+            // CAPEX 요약 (내림차순 정렬, B 표시 제거)
             let capexHtml = '';
-            Object.entries(capexData).forEach(([period, data]) => {
+            const capexKeys = Object.keys(capexData).sort().reverse(); // 내림차순
+            capexKeys.forEach(period => {
+                const data = capexData[period];
                 const [year, quarter] = period.split('-');
                 let values = [];
                 companies.forEach(company => {
                     if (data[company]) {
-                        values.push(`${company} ${data[company]}B`);
+                        values.push(`${company} ${data[company]}`); // B 제거
                     }
                 });
                 if (values.length > 0) {
@@ -881,14 +883,16 @@
             });
             document.getElementById('capexList').innerHTML = capexHtml || '<div style="color: #a8b5cc;">데이터를 입력해주세요</div>';
 
-            // 클라우드 매출 요약
+            // 클라우드 매출 요약 (내림차순 정렬, B 표시 제거)
             let cloudHtml = '';
-            Object.entries(cloudData).forEach(([period, data]) => {
+            const cloudKeys = Object.keys(cloudData).sort().reverse(); // 내림차순
+            cloudKeys.forEach(period => {
+                const data = cloudData[period];
                 const [year, quarter] = period.split('-');
                 let values = [];
                 companies.forEach(company => {
                     if (data[company]) {
-                        values.push(`${company} ${data[company]}B`);
+                        values.push(`${company} ${data[company]}`); // B 제거
                     }
                 });
                 if (values.length > 0) {
