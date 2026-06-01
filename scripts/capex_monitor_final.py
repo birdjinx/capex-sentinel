@@ -95,7 +95,19 @@ class CapexMonitor:
         except Exception as e:
             print(f"❌ FRED 오류: {e}")
 
-    def fetch_tsmc_data(self):
+    def load_sec_signals(self):
+        """SEC CAPEX 신호 데이터 로드"""
+        try:
+            if os.path.exists('data_sec_capex.json'):
+                with open('data_sec_capex.json', 'r', encoding='utf-8') as f:
+                    sec_data = json.load(f)
+                    signals = sec_data.get('signal_summary', {})
+                    self.data['components']['capex_signals'] = signals
+                    return signals
+        except Exception as e:
+            print(f"⚠️  SEC 신호 로드 오류: {e}")
+        
+        return {}
         """
         B) TSMC 데이터 - yfinance API ✅
         """
@@ -261,7 +273,12 @@ class CapexMonitor:
 
     def calculate_risk_score(self):
         """
-        위험 점수 계산 (0~100)
+        수정된 위험 점수 계산
+        - CRITICAL (급감): +60점
+        - WARNING (소폭 감소): +30점
+        - NORMAL (안정): ±0점
+        - BULLISH (증가): -15점
+        - BULLISH+ (급증): -30점
         """
         try:
             print("\n🎯 위험 점수 계산 중...")
@@ -269,43 +286,91 @@ class CapexMonitor:
             score = 0
             comp = self.data['components']
             
-            # 1. TSMC YoY
+            # 1. TSMC YoY (음수면 위험)
             tsmc_yoy = comp.get('tsmc_yoy', 0)
             if tsmc_yoy < -10:
                 score += 30
+                print(f"  TSMC 급감: +30점")
             elif tsmc_yoy < -5:
                 score += 20
+                print(f"  TSMC 하락: +20점")
             
-            # 2. 한국 반도체
+            # 2. 한국 반도체 (음수면 위험)
             korea_change = comp.get('korea_semicon_change', 0)
             if korea_change < -5:
                 score += 25
+                print(f"  한국 반도체 급감: +25점")
             elif korea_change < -3:
                 score += 15
+                print(f"  한국 반도체 하락: +15점")
             
-            # 3. 매크로 (USD/JPY)
+            # 3. 매크로 (엔약하면 위험)
             jpy_usd = comp.get('jpy_usd', 150)
             if jpy_usd and jpy_usd < 145:
                 score += 20
+                print(f"  엔강화: +20점")
             
-            # 4. CAPEX 트렌드
-            capex_trend = comp.get('bigtech_capex_trend', 0)
-            if capex_trend < -10:
-                score += 25
-            elif capex_trend < -5:
-                score += 15
+            # 4. CAPEX 신호별 점수 (NEW - 신호 기반)
+            capex_signals = comp.get('capex_signals', {})
             
+            critical_count = capex_signals.get('critical', 0)
+            warning_count = capex_signals.get('warning', 0)
+            bullish_count = capex_signals.get('bullish', 0)
+            bullish_plus_count = capex_signals.get('bullish_plus', 0)
+            
+            # 경기 둔화 신호 (위험)
+            if critical_count >= 3:
+                capex_impact = 60
+            elif critical_count >= 2:
+                capex_impact = 45
+            elif critical_count >= 1:
+                capex_impact = 30
+            # 주의 신호
+            elif warning_count >= 3:
+                capex_impact = 20
+            # 긍정적 신호 (위험도 감소)
+            elif bullish_plus_count >= 2:
+                capex_impact = -40  # 기술 투자 극적 확대
+            elif bullish_plus_count >= 1 and bullish_count >= 2:
+                capex_impact = -25
+            elif bullish_count >= 4:
+                capex_impact = -20
+            elif bullish_count >= 2:
+                capex_impact = -10
+            else:
+                capex_impact = 0
+            
+            score += capex_impact
+            
+            if capex_impact > 0:
+                print(f"  CAPEX 경기둔화 신호: +{capex_impact}점")
+            elif capex_impact < 0:
+                print(f"  CAPEX 기술투자 확대: {capex_impact}점 (위험도 감소)")
+            else:
+                print(f"  CAPEX 중립: ±0점")
+            
+            # 최종 점수 (0~100 범위)
             final_score = min(max(score, 0), 100)
             self.data['risk_score'] = final_score
             
+            # 상태 판정
             if final_score >= 70:
                 self.data['status'] = 'CRITICAL'
+                status_emoji = '🔴'
             elif final_score >= 40:
                 self.data['status'] = 'WARNING'
+                status_emoji = '🟠'
             else:
                 self.data['status'] = 'NORMAL'
+                status_emoji = '✅'
             
-            print(f"✓ 위험 점수: {final_score:.1f} ({self.data['status']})")
+            print(f"\n최종 계산:")
+            print(f"  CRITICAL: {critical_count}개 기업")
+            print(f"  WARNING: {warning_count}개 기업")
+            print(f"  BULLISH: {bullish_count}개 기업")
+            print(f"  BULLISH+: {bullish_plus_count}개 기업")
+            print(f"  ━━━━━━━━━━━━━━━━━━━━━━━━")
+            print(f"  위험도: {final_score:.1f}/100 {status_emoji} {self.data['status']}")
             
         except Exception as e:
             print(f"❌ 점수 계산 오류: {e}")
@@ -330,13 +395,13 @@ class CapexMonitor:
         메인 실행
         """
         print("=" * 70)
-        print("CAPEX Sentinel - 최종 안정화 버전")
+        print("CAPEX Sentinel - 신호 기반 위험도 분석")
         print("=" * 70)
         
         self.fetch_fred_data()
         self.fetch_tsmc_data()
         self.fetch_korea_semicon_exports()
-        self.fetch_sec_capex_data()
+        self.load_sec_signals()  # SEC CAPEX 신호 로드
         
         self.calculate_risk_score()
         self.save_data()
