@@ -589,7 +589,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateSelectedQuarterDisplay();
             initializeInputs();
-            loadData();
+            loadDataToInputs();  // 초기 로드 시 데이터 표시
             updateUI();
         });
 
@@ -597,7 +597,33 @@
             selectedYear = document.getElementById('yearSelect').value;
             selectedQuarter = document.getElementById('quarterSelect').value;
             updateSelectedQuarterDisplay();
-            loadData();
+            loadDataToInputs();  // 입력 필드에 데이터 표시
+        }
+
+        function loadDataToInputs() {
+            """현재 선택된 분기의 데이터를 입력 필드에 표시"""
+            const capexData = JSON.parse(localStorage.getItem('capex_data') || '{}');
+            const cloudData = JSON.parse(localStorage.getItem('cloud_data') || '{}');
+            const key = `${selectedYear}-${selectedQuarter}`;
+
+            companies.forEach(company => {
+                const capexInput = document.getElementById(`capex_${company}`);
+                const cloudInput = document.getElementById(`cloud_${company}`);
+                
+                // CAPEX 데이터 표시
+                if (capexData[key] && capexData[key][company]) {
+                    capexInput.value = capexData[key][company];
+                } else {
+                    capexInput.value = '';
+                }
+                
+                // 클라우드 매출 데이터 표시
+                if (cloudData[key] && cloudData[key][company]) {
+                    cloudInput.value = cloudData[key][company];
+                } else {
+                    cloudInput.value = '';
+                }
+            });
         }
 
         function updateSelectedQuarterDisplay() {
@@ -681,28 +707,9 @@
         }
 
         function loadData() {
+            // localStorage에서 모든 데이터 로드 (UI 업데이트용)
             const capexData = JSON.parse(localStorage.getItem('capex_data') || '{}');
             const cloudData = JSON.parse(localStorage.getItem('cloud_data') || '{}');
-            const key = `${selectedYear}-${selectedQuarter}`;
-
-            // 현재 분기 데이터 로드
-            companies.forEach(company => {
-                const capexInput = document.getElementById(`capex_${company}`);
-                const cloudInput = document.getElementById(`cloud_${company}`);
-                
-                if (capexData[key]?.[company]) {
-                    capexInput.value = capexData[key][company];
-                } else {
-                    capexInput.value = '';
-                }
-                
-                if (cloudData[key]?.[company]) {
-                    cloudInput.value = cloudData[key][company];
-                } else {
-                    cloudInput.value = '';
-                }
-            });
-
             return { capexData, cloudData };
         }
 
