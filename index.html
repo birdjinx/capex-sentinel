@@ -433,15 +433,15 @@
             </div>
             <div class="score-breakdown">
                 <div class="breakdown-item">
-                    <span class="breakdown-label">CAPEX + 클라우드 (50%):</span>
+                    <span class="breakdown-label">CAPEX + 클라우드 (80%):</span>
                     <span class="breakdown-value" id="scoreCapex">-</span>
                 </div>
                 <div class="breakdown-item">
-                    <span class="breakdown-label">TSMC + 반도체 (35%):</span>
+                    <span class="breakdown-label">TSMC + 반도체 (12%):</span>
                     <span class="breakdown-value" id="scoreChip">-</span>
                 </div>
                 <div class="breakdown-item">
-                    <span class="breakdown-label">거시경제 지표 (15%):</span>
+                    <span class="breakdown-label">거시경제 지표 (8%):</span>
                     <span class="breakdown-value" id="scoreMacro">-</span>
                 </div>
             </div>
@@ -641,7 +641,19 @@
                     </div>
                     <div>
                         <div class="data-label">위험도 가중치</div>
-                        <div class="data-value">CAPEX 50% + 반도체 35% + 거시경제 15%</div>
+                        <div class="data-value">CAPEX+클라우드 80% | 반도체 12% | 거시경제 8%</div>
+                    </div>
+                    <div>
+                        <div class="data-label">CAPEX 변화율</div>
+                        <div class="data-value">QoQ 70% + YoY 30%</div>
+                    </div>
+                    <div>
+                        <div class="data-label">매출 변화율</div>
+                        <div class="data-value">QoQ 30% + YoY 70%</div>
+                    </div>
+                    <div>
+                        <div class="data-label">괴리 경고</div>
+                        <div class="data-value">2분기 연속 괴리 시 ⚠️</div>
                     </div>
                     <div>
                         <div class="data-label">데이터 저장</div>
@@ -795,9 +807,12 @@
             let chipScore = 0;
             let macroScore = 0;
 
-            // 1. CAPEX 분석 (50% 가중치)
+            // 1. CAPEX + 클라우드 분석 (80% 가중치)
             let capexChangeSum = 0;
+            let cloudChangeSum = 0;
             let capexCount = 0;
+            let cloudCount = 0;
+            
             Object.values(capexData).forEach(periodData => {
                 Object.values(periodData).forEach(value => {
                     if (value) {
@@ -806,30 +821,43 @@
                     }
                 });
             });
+            
+            Object.values(cloudData).forEach(periodData => {
+                Object.values(periodData).forEach(value => {
+                    if (value) {
+                        cloudChangeSum += Math.abs(value);
+                        cloudCount++;
+                    }
+                });
+            });
 
-            // CAPEX 평균 변화율에 따른 점수
+            // CAPEX + 클라우드 평균에 따른 점수 (100점 기준)
             const capexAvg = capexCount > 0 ? capexChangeSum / capexCount : 0;
-            if (capexAvg > 50) capexScore = 10;
-            else if (capexAvg > 30) capexScore = 20;
-            else if (capexAvg > 10) capexScore = 30;
+            const cloudAvg = cloudCount > 0 ? cloudChangeSum / cloudCount : 0;
+            const capexCloudAvg = (capexAvg + cloudAvg) / 2;
+            
+            if (capexCloudAvg > 50) capexScore = 30;
+            else if (capexCloudAvg > 35) capexScore = 25;
+            else if (capexCloudAvg > 20) capexScore = 20;
+            else if (capexCloudAvg > 10) capexScore = 15;
             else capexScore = 5;
 
-            // 2. TSMC + 한국 반도체 (35% 가중치) - 거시경제에서 추출
+            // 2. TSMC + 한국 반도체 (12% 가중치)
             const tsmcVal = parseFloat(document.getElementById('tsmc').textContent) || 0;
             const koreaVal = parseFloat(document.getElementById('koreaChip').textContent) || 0;
             
-            if (tsmcVal < -10 || koreaVal < -5) chipScore = 30;
-            else if (tsmcVal < -5 || koreaVal < -3) chipScore = 20;
-            else chipScore = 5;
+            if (tsmcVal < -10 || koreaVal < -5) chipScore = 12;
+            else if (tsmcVal < -5 || koreaVal < -3) chipScore = 8;
+            else chipScore = 3;
 
-            // 3. 거시경제 지표 (15% 가중치)
+            // 3. 거시경제 지표 (8% 가중치)
             const jpyVal = parseFloat(document.getElementById('jpy').textContent) || 150;
-            if (jpyVal < 145) macroScore = 15;
-            else if (jpyVal < 150) macroScore = 10;
-            else macroScore = 5;
+            if (jpyVal < 145) macroScore = 8;
+            else if (jpyVal < 150) macroScore = 5;
+            else macroScore = 2;
 
-            // 최종 점수 계산 (가중치 적용)
-            score = (capexScore * 0.5) + (chipScore * 0.35) + (macroScore * 0.15);
+            // 최종 점수 계산 (가중치 적용: 80% + 12% + 8%)
+            score = (capexScore * 0.80) + (chipScore * 0.12) + (macroScore * 0.08);
             score = Math.min(Math.max(Math.round(score), 0), 100);
 
             // UI 업데이트
@@ -855,10 +883,10 @@
                 scoreDesc.textContent = '즉시 대응 필요';
             }
 
-            // 가중치별 점수 표시
-            document.getElementById('scoreCapex').textContent = `${capexScore.toFixed(1)}/100`;
-            document.getElementById('scoreChip').textContent = `${chipScore.toFixed(1)}/100`;
-            document.getElementById('scoreMacro').textContent = `${macroScore.toFixed(1)}/100`;
+            // 가중치별 점수 표시 (실제 100점 기준으로 표시)
+            document.getElementById('scoreCapex').textContent = `${(capexScore * 0.80).toFixed(1)}/100`;
+            document.getElementById('scoreChip').textContent = `${(chipScore * 0.12).toFixed(1)}/100`;
+            document.getElementById('scoreMacro').textContent = `${(macroScore * 0.08).toFixed(1)}/100`;
             document.getElementById('updateTime').textContent = new Date().toLocaleString('ko-KR');
         }
 
@@ -903,40 +931,88 @@
 
             // 괴리도 분석
             let divergenceHtml = '';
-            const latestKey = Object.keys(capexData).sort().pop();
-            const capexLatest = capexData[latestKey] || {};
-            const cloudLatest = cloudData[latestKey] || {};
+            const allKeys = [...new Set([...Object.keys(capexData), ...Object.keys(cloudData)])].sort();
+            const latestKey = allKeys[allKeys.length - 1];
+            const prevKey = allKeys.length > 1 ? allKeys[allKeys.length - 2] : null;
+            const prevPrevKey = allKeys.length > 2 ? allKeys[allKeys.length - 3] : null;
 
             companies.forEach(company => {
-                const capex = capexLatest[company];
-                const cloud = cloudLatest[company];
+                const capexCurrent = capexData[latestKey]?.[company];
+                const cloudCurrent = cloudData[latestKey]?.[company];
+                const capexPrev = prevKey ? capexData[prevKey]?.[company] : null;
+                const cloudPrev = prevKey ? cloudData[prevKey]?.[company] : null;
+                const capexPrevPrev = prevPrevKey ? capexData[prevPrevKey]?.[company] : null;
+                const cloudPrevPrev = prevPrevKey ? cloudData[prevPrevKey]?.[company] : null;
 
-                if (capex && cloud) {
-                    let prevKey = latestKey ? getPreviousQuarter(latestKey) : null;
-                    const capexPrev = prevKey ? capexData[prevKey]?.[company] : null;
-                    const cloudPrev = prevKey ? cloudData[prevKey]?.[company] : null;
-
-                    if (capexPrev && cloudPrev) {
-                        const capexChange = (((capex - capexPrev) / capexPrev) * 100).toFixed(1);
-                        const cloudChange = (((cloud - cloudPrev) / cloudPrev) * 100).toFixed(1);
-                        const divergence = (capexChange - cloudChange).toFixed(1);
-
-                        let divergenceClass = 'low';
-                        if (Math.abs(divergence) > 30) divergenceClass = 'high';
-                        else if (Math.abs(divergence) > 15) divergenceClass = 'medium';
-
-                        divergenceHtml += `
-                            <div style="margin-bottom: 10px;">
-                                <strong style="color: #d4af37;">${company}</strong>
-                                <div style="font-size: 10px; color: #a8b5cc; margin-top: 4px;">
-                                    CAPEX: ${capexChange > 0 ? '+' : ''}${capexChange}% | 매출: ${cloudChange > 0 ? '+' : ''}${cloudChange}%
-                                </div>
-                                <div class="divergence ${divergenceClass}" style="margin-top: 4px; padding: 6px 8px; font-size: 10px;">
-                                    ${Math.abs(divergence) > 20 ? '⚠️' : '✅'} 괴리도: ${Math.abs(divergence)}%p
-                                </div>
-                            </div>
-                        `;
+                if (capexCurrent && cloudCurrent) {
+                    // QoQ 변화율 계산
+                    let capexQoQ = capexPrev ? (((capexCurrent - capexPrev) / capexPrev) * 100) : 0;
+                    let cloudQoQ = cloudPrev ? (((cloudCurrent - cloudPrev) / cloudPrev) * 100) : 0;
+                    
+                    // YoY 변화율 계산 (4분기 전 비교)
+                    let capexYoY = 0;
+                    let cloudYoY = 0;
+                    if (allKeys.length >= 4) {
+                        const yearAgoKey = allKeys[allKeys.length - 5]; // 4분기 전
+                        const capexYearAgo = capexData[yearAgoKey]?.[company];
+                        const cloudYearAgo = cloudData[yearAgoKey]?.[company];
+                        if (capexYearAgo) capexYoY = (((capexCurrent - capexYearAgo) / capexYearAgo) * 100);
+                        if (cloudYearAgo) cloudYoY = (((cloudCurrent - cloudYearAgo) / cloudYearAgo) * 100);
                     }
+
+                    // 가중 평균 변화율
+                    // CAPEX: QoQ 70% + YoY 30%
+                    const capexWeightedChange = (capexQoQ * 0.7) + (capexYoY * 0.3);
+                    // 매출: QoQ 30% + YoY 70%
+                    const cloudWeightedChange = (cloudQoQ * 0.3) + (cloudYoY * 0.7);
+
+                    // 괴리도 = CAPEX 성장률 - 매출 성장률
+                    const divergence = (capexWeightedChange - cloudWeightedChange).toFixed(1);
+
+                    // 이전 분기 괴리도 계산 (연속 괴리 감지용)
+                    let prevDivergence = null;
+                    if (capexPrev && cloudPrev && prevPrevKey) {
+                        const capexPrevQoQ = prevPrevKey ? (((capexPrev - capexData[prevPrevKey]?.[company]) / capexData[prevPrevKey]?.[company]) * 100) : 0;
+                        const cloudPrevQoQ = prevPrevKey ? (((cloudPrev - cloudData[prevPrevKey]?.[company]) / cloudData[prevPrevKey]?.[company]) * 100) : 0;
+                        
+                        let capexPrevYoY = 0;
+                        let cloudPrevYoY = 0;
+                        if (allKeys.length >= 5) {
+                            const prevYearAgoKey = allKeys[allKeys.length - 6];
+                            const capexPrevYearAgo = capexData[prevYearAgoKey]?.[company];
+                            const cloudPrevYearAgo = cloudData[prevYearAgoKey]?.[company];
+                            if (capexPrevYearAgo) capexPrevYoY = (((capexPrev - capexPrevYearAgo) / capexPrevYearAgo) * 100);
+                            if (cloudPrevYearAgo) cloudPrevYoY = (((cloudPrev - cloudPrevYearAgo) / cloudPrevYearAgo) * 100);
+                        }
+
+                        const capexPrevWeightedChange = (capexPrevQoQ * 0.7) + (capexPrevYoY * 0.3);
+                        const cloudPrevWeightedChange = (cloudPrevQoQ * 0.3) + (cloudPrevYoY * 0.7);
+                        prevDivergence = capexPrevWeightedChange - cloudPrevWeightedChange;
+                    }
+
+                    // 경고 조건: CAPEX 성장률 높음 + 매출 가속도 둔화가 2분기 연속
+                    let warningIcon = '';
+                    if (capexWeightedChange > 10 && cloudWeightedChange < 5) {
+                        if (prevDivergence !== null && prevDivergence > 5) {
+                            warningIcon = ' ⚠️'; // 2분기 연속 괴리
+                        }
+                    }
+
+                    let divergenceClass = 'low';
+                    if (Math.abs(divergence) > 30) divergenceClass = 'high';
+                    else if (Math.abs(divergence) > 15) divergenceClass = 'medium';
+
+                    divergenceHtml += `
+                        <div style="margin-bottom: 10px;">
+                            <strong style="color: #d4af37;">${company}</strong>
+                            <div style="font-size: 10px; color: #a8b5cc; margin-top: 4px;">
+                                CAPEX: ${capexWeightedChange.toFixed(1)}% | 매출: ${cloudWeightedChange.toFixed(1)}%
+                            </div>
+                            <div class="divergence ${divergenceClass}" style="margin-top: 4px; padding: 6px 8px; font-size: 10px;">
+                                ${Math.abs(divergence) > 20 ? '🔴' : '✅'} 괴리도: ${divergence}%p${warningIcon}
+                            </div>
+                        </div>
+                    `;
                 }
             });
             document.getElementById('divergenceList').innerHTML = divergenceHtml || '<div style="color: #a8b5cc;">비교 데이터를 입력해주세요</div>';
