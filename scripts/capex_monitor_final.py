@@ -108,6 +108,8 @@ class CapexMonitor:
             print(f"⚠️  SEC 신호 로드 오류: {e}")
         
         return {}
+
+    def fetch_tsmc_data(self):
         """
         B) TSMC 데이터 - yfinance API ✅
         """
