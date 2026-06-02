@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-CAPEX Sentinel - 최종 안정화 버전
+CAPEX Sentinel - 최종 안정화 버전 (BOJ 자동 파싱 포함)
 안정적이고 실제로 작동하는 데이터 수집:
 A) FRED API (연방준비제도) ✅
 B) yfinance (TSMC 주가/재무) ✅ 
 C) 직접 계산 (한국 반도체) ✅
 D) SEC EDGAR (빅테크 CAPEX) ✅
+E) BOJ 기준금리 ✅ (NEW)
 """
 
 import os
@@ -31,6 +32,7 @@ class CapexMonitor:
     def fetch_fred_data(self):
         """
         A) FRED API - 연방준비제도 공식 경제지표 ✅
+        Fed, 10Y 수익률, USD/JPY, BOJ 기준금리
         """
         try:
             print("\n📊 [FRED API] 거시경제 지표 수집 중...")
@@ -38,7 +40,7 @@ class CapexMonitor:
             indicators = {
                 'FEDFUNDS': ('Fed Rate', 'Fed 기준금리'),
                 'DGS10': ('10Y Treasury', '10년물 수익률'),
-                'DEXJPUS': ('USD/JPY', 'USD/JPY 환율')
+                'DEXJPUS': ('USD/JPY', 'USD/JPY 환율'),
                 'BOJMMRDF': ('BOJ Rate', 'BOJ 기준금리')
             }
             
@@ -74,6 +76,8 @@ class CapexMonitor:
                                     continue
                                 elif series_id == 'DEXJPUS' and (value < 100 or value > 200):
                                     continue
+                                elif series_id == 'BOJMMRDF' and (value < -1 or value > 5):
+                                    continue
                                 
                                 if series_id == 'FEDFUNDS':
                                     self.data['components']['fed_rate'] = value
@@ -84,6 +88,9 @@ class CapexMonitor:
                                 elif series_id == 'DEXJPUS':
                                     self.data['components']['jpy_usd'] = value
                                     print(f"  ✅ USD/JPY: {value:.2f} ({date})")
+                                elif series_id == 'BOJMMRDF':
+                                    self.data['components']['boj_rate'] = value
+                                    print(f"  ✅ BOJ 기준금리: {value:.2f}% ({date})")
                             
                             except ValueError:
                                 pass
@@ -398,7 +405,7 @@ class CapexMonitor:
         메인 실행
         """
         print("=" * 70)
-        print("CAPEX Sentinel - 신호 기반 위험도 분석")
+        print("CAPEX Sentinel - 신호 기반 위험도 분석 (BOJ 포함)")
         print("=" * 70)
         
         self.fetch_fred_data()
