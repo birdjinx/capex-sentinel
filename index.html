@@ -517,6 +517,10 @@
                 <div id="capexSummary">
                     <div class="data-label" style="margin-bottom: 8px;">최근 분기 추이</div>
                     <div id="capexList" style="font-size: 12px; line-height: 1.8;">데이터 없음</div>
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #333;">
+                        <div class="data-label" style="margin-bottom: 8px;">분기별 CAPEX-매출 괴리도 추이</div>
+                        <div id="capexHistory" style="font-size: 11px; line-height: 1.6; color: #a0a0a0;">데이터 없음</div>
+                    </div>
                 </div>
             </div>
 
@@ -655,6 +659,12 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
                     <button onclick="exportData()" style="background: #22cc88; color: #0a0e27;">📥 데이터 내보내기</button>
                     <button class="secondary" onclick="importData()" style="background: #2a3456; color: #d4af37;">📤 데이터 가져오기</button>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <button onclick="recalculateGapData()" style="background: #8b5cf6; color: #fff; width: 100%; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                        🔄 괴리도 재계산 (현재 데이터 기반)
+                    </button>
                 </div>
 
                 <div style="background: rgba(0, 0, 0, 0.2); border-radius: 8px; padding: 12px; font-size: 10px; color: #a8b5cc; line-height: 1.6;">
@@ -807,6 +817,9 @@
             document.getElementById('capexMessage').innerHTML = 
                 '<div class="success-msg">✅ CAPEX 데이터 저장 완료!</div>';
             
+            // CAPEX 저장 후 괴리도 자동 계산
+            saveGapData();
+            
             setTimeout(() => {
                 document.getElementById('capexMessage').innerHTML = '';
                 calculateRiskScore();
@@ -830,11 +843,165 @@
             document.getElementById('cloudMessage').innerHTML = 
                 '<div class="success-msg">✅ 클라우드 매출 저장 완료!</div>';
             
+            // 클라우드 매출 저장 후 괴리도 자동 계산
+            saveGapData();
+            
             setTimeout(() => {
                 document.getElementById('cloudMessage').innerHTML = '';
                 calculateRiskScore();
                 updateUI();
             }, 2000);
+        }
+
+        // ===== 새로운 함수: 분기별 괴리도 계산 및 저장 =====
+        
+        function calculateGapForCompany(company, year, quarter) {
+            const capexData = JSON.parse(localStorage.getItem('capex_data') || '{}');
+            const cloudData = JSON.parse(localStorage.getItem('cloud_data') || '{}');
+            const key = `${year}-${quarter}`;
+            
+            if (!capexData[key] || !cloudData[key]) return null;
+            
+            const capex = capexData[key][company];
+            const cloud = cloudData[key][company];
+            
+            if (!capex || !cloud) return null;
+            
+            // 각 회사의 QoQ와 YoY 계산 (간단 버전)
+            // 전체 데이터 기반으로 최신 분기 대비 변화율 계산
+            const capexChange = calculateChangeRate(capexData, company, key, true);  // CAPEX: QoQ 70% + YoY 30%
+            const cloudChange = calculateChangeRate(cloudData, company, key, false); // Cloud: QoQ 30% + YoY 70%
+            
+            // 괴리도 = CAPEX 변화율 - Cloud 변화율
+            return capexChange - cloudChange;
+        }
+
+        function calculateChangeRate(dataType, company, currentKey, isCapex) {
+            // 현재 분기와 비교할 이전 분기/연도 데이터 찾기
+            const [year, quarter] = currentKey.split('-');
+            const current = dataType[currentKey]?.[company];
+            
+            if (!current) return 0;
+            
+            // 모든 분기 데이터 정렬
+            const quarters = Object.keys(dataType).sort();
+            const currentIndex = quarters.indexOf(currentKey);
+            
+            if (currentIndex <= 0) return 0;
+            
+            // QoQ: 이전 분기
+            const prevQuarter = quarters[currentIndex - 1];
+            const prevValue = dataType[prevQuarter]?.[company];
+            
+            let qoq = 0;
+            if (prevValue && prevValue > 0) {
+                qoq = ((current - prevValue) / prevValue) * 100;
+            }
+            
+            // YoY: 1년 전 동분기 (있으면)
+            let yoy = 0;
+            const yearAgoKey = `${parseInt(year) - 1}-${quarter}`;
+            const yearAgoValue = dataType[yearAgoKey]?.[company];
+            if (yearAgoValue && yearAgoValue > 0) {
+                yoy = ((current - yearAgoValue) / yearAgoValue) * 100;
+            }
+            
+            // 가중치 적용
+            if (isCapex) {
+                return (qoq * 0.70) + (yoy * 0.30);  // CAPEX: QoQ 70% + YoY 30%
+            } else {
+                return (qoq * 0.30) + (yoy * 0.70);  // Cloud: QoQ 30% + YoY 70%
+            }
+        }
+
+        function saveGapData() {
+            const capexData = JSON.parse(localStorage.getItem('capex_data') || '{}');
+            const cloudData = JSON.parse(localStorage.getItem('cloud_data') || '{}');
+            let gapData = JSON.parse(localStorage.getItem('gap_data') || '{}');
+            
+            // 각 분기별로 괴리도 계산
+            Object.keys(capexData).forEach(quarter => {
+                if (!gapData[quarter]) {
+                    gapData[quarter] = {};
+                }
+                
+                let totalGap = 0;
+                let gapCount = 0;
+                const weights = { MSFT: 0.30, GOOGL: 0.25, AMZN: 0.25, META: 0.15, TSLA: 0.05 };
+                
+                companies.forEach(company => {
+                    const gap = calculateGapForCompany(company, quarter.split('-')[0], quarter.split('-')[1]);
+                    if (gap !== null) {
+                        gapData[quarter][company] = Math.round(gap * 100) / 100;
+                        totalGap += gap * (weights[company] || 0);
+                        gapCount++;
+                    }
+                });
+                
+                gapData[quarter].weighted_average = gapCount > 0 ? Math.round(totalGap * 100) / 100 : 0;
+            });
+            
+            localStorage.setItem('gap_data', JSON.stringify(gapData));
+        }
+
+        function calculateGapTrend() {
+            const gapData = JSON.parse(localStorage.getItem('gap_data') || '{}');
+            const quarters = Object.keys(gapData).sort();
+            
+            if (quarters.length < 1) return { current: 0, previous: 0, trend: 0, direction: '-' };
+            
+            const current = gapData[quarters[quarters.length - 1]].weighted_average;
+            const previous = quarters.length >= 2 ? gapData[quarters[quarters.length - 2]].weighted_average : current;
+            const trend = current - previous;
+            
+            return {
+                current: Math.round(current * 100) / 100,
+                previous: Math.round(previous * 100) / 100,
+                trend: Math.round(trend * 100) / 100,
+                direction: trend > 0 ? '↗' : trend < 0 ? '↘' : '→'
+            };
+        }
+
+        function updateCapexTrendDisplay() {
+            const gapTrend = calculateGapTrend();
+            const trendColor = gapTrend.trend > 0 ? '#10b981' : gapTrend.trend < 0 ? '#ef4444' : '#8b8b8b';
+            
+            document.getElementById('capexTrend').textContent = 
+                `${gapTrend.current > 0 ? '+' : ''}${gapTrend.current}% ${gapTrend.direction}`;
+            document.getElementById('capexTrend').style.color = trendColor;
+            
+            document.getElementById('capexStatus').textContent = 
+                `전분기 대비 ${gapTrend.trend > 0 ? '+' : ''}${gapTrend.trend}%`;
+            
+            // 분기별 괴리도 히스토리 표시
+            const gapData = JSON.parse(localStorage.getItem('gap_data') || '{}');
+            const quarters = Object.keys(gapData).sort();
+            if (quarters.length > 0) {
+                const historyText = quarters.slice(-5).map(q => {
+                    const val = gapData[q].weighted_average;
+                    return `${q}: ${val > 0 ? '+' : ''}${val}%`;
+                }).join(' → ');
+                
+                const historyDiv = document.getElementById('capexHistory');
+                if (historyDiv) {
+                    historyDiv.textContent = historyText;
+                }
+            }
+        }
+
+        function recalculateGapData() {
+            try {
+                saveGapData();
+                document.getElementById('capexMessage').innerHTML = 
+                    '<div class="success-msg">✅ 괴리도 재계산 완료!</div>';
+                setTimeout(() => {
+                    document.getElementById('capexMessage').innerHTML = '';
+                    calculateRiskScore();
+                    updateUI();
+                }, 1500);
+            } catch (e) {
+                alert('❌ 괴리도 재계산 실패: ' + e.message);
+            }
         }
 
         function loadData() {
@@ -1324,9 +1491,8 @@
             });
             capexAvg = capexCount > 0 ? (capexAvg / capexCount) : 0;
             
-            document.getElementById('capexTrend').textContent = capexAvg > 30 ? '+18.5%' : '입력 대기중';
-            document.getElementById('capexStatus').className = 'data-change change-up';
-            document.getElementById('capexStatus').textContent = '증가 ↑';
+            // 새 함수: 분기별 괴리도 기반 CAPEX 추세 표시
+            updateCapexTrendDisplay();
 
             const macroTime = localStorage.getItem('macro_data_time');
             if (macroTime) {
