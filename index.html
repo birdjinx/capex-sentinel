@@ -737,6 +737,11 @@
             loadMacroData();
             calculateRiskScore();
             updateUI();
+            
+            // 데이터 로드 확실하게 하기 위해 100ms 후 다시 실행
+            setTimeout(() => {
+                updateUI();
+            }, 100);
         });
 
         function selectQuarter() {
