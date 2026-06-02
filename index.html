@@ -400,11 +400,11 @@
             color: #a8b5cc;
         }
 
-        .breakdown-label {
+        .breakdown-label{
             font-weight: 600;
         }
 
-        .breakdown-value {
+        .breakdown-value{
             color: #d4af37;
             font-family: 'Courier New', monospace;
         }
@@ -419,7 +419,6 @@
     </div>
 
     <div class="container">
-        <!-- 위험도 점수 -->
         <div class="card">
             <div class="score-box">
                 <div id="scoreCircle" class="score-circle safe">
@@ -450,7 +449,6 @@
             </div>
         </div>
 
-        <!-- 거시경제 + 반도체 지표 (2x3) -->
         <div class="grid-2x2">
             <div class="card data-card">
                 <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -480,7 +478,6 @@
             </div>
         </div>
 
-        <!-- TSMC + 한국 반도체 -->
         <div class="grid-3x1">
             <div class="card data-card">
                 <div>
@@ -507,7 +504,6 @@
             </div>
         </div>
 
-        <!-- 탭 네비게이션 -->
         <div class="tab-nav">
             <button class="tab-btn active" onclick="switchTab('overview')">📊 개요</button>
             <button class="tab-btn" onclick="switchTab('input')">✏️ 데이터 입력</button>
@@ -515,9 +511,7 @@
             <button class="tab-btn" onclick="switchTab('settings')">⚙️ 설정</button>
         </div>
 
-        <!-- 개요 섹션 -->
         <div id="overview" class="section active">
-            <!-- CAPEX 트렌드 -->
             <div class="comparison-box">
                 <div class="comparison-title">🚀 빅테크 CAPEX 투자 규모 (선행지표)</div>
                 <div id="capexSummary">
@@ -526,7 +520,6 @@
                 </div>
             </div>
 
-            <!-- 클라우드 매출 트렌드 -->
             <div class="comparison-box">
                 <div class="comparison-title">☁️ 클라우드 매출 성장률 (동행지표)</div>
                 <div id="cloudSummary">
@@ -535,7 +528,6 @@
                 </div>
             </div>
 
-            <!-- 괴리도 분석 -->
             <div class="comparison-box">
                 <div class="comparison-title">📊 CAPEX-매출 괴리도 분석</div>
                 <div id="divergenceAnalysis">
@@ -545,9 +537,7 @@
             </div>
         </div>
 
-        <!-- 데이터 입력 섹션 -->
         <div id="input" class="section">
-            <!-- 분기 선택 -->
             <div class="quarter-selector">
                 <div class="selector-group" style="flex: 0.5;">
                     <label>연도</label>
@@ -573,7 +563,6 @@
                 </div>
             </div>
 
-            <!-- CAPEX 입력 -->
             <div class="card">
                 <h3 style="color: #d4af37; margin-bottom: 16px; font-size: 14px;">📝 CAPEX 투자규모 입력 (십억 달러 B)</h3>
                 <div style="font-size: 11px; color: #a8b5cc; margin-bottom: 12px;">
@@ -581,7 +570,6 @@
                 </div>
                 
                 <div id="capexInputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                    <!-- JavaScript에서 생성 -->
                 </div>
                 
                 <div class="btn-group">
@@ -592,7 +580,6 @@
                 <div id="capexMessage"></div>
             </div>
 
-            <!-- 클라우드 매출 입력 -->
             <div class="card" style="margin-top: 20px;">
                 <h3 style="color: #d4af37; margin-bottom: 16px; font-size: 14px;">☁️ 클라우드 매출 입력 (십억 달러 B)</h3>
                 <div style="font-size: 11px; color: #a8b5cc; margin-bottom: 12px;">
@@ -600,7 +587,6 @@
                 </div>
                 
                 <div id="cloudInputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                    <!-- JavaScript에서 생성 -->
                 </div>
                 
                 <div class="btn-group">
@@ -612,14 +598,11 @@
             </div>
         </div>
 
-        <!-- 분석 섹션 -->
         <div id="analysis" class="section">
             <div id="companyAnalysisList" style="display: flex; flex-direction: column; gap: 14px;">
-                <!-- JavaScript에서 생성 -->
             </div>
         </div>
 
-        <!-- 설정 섹션 -->
         <div id="settings" class="section">
             <div class="card">
                 <h3 style="color: #d4af37; margin-bottom: 16px; font-size: 14px;">📊 시스템 정보</h3>
@@ -663,9 +646,29 @@
                 </div>
             </div>
 
-            <!-- 거시경제 데이터 수동 입력 -->
             <div class="card" style="margin-top: 20px;">
-                <h3 style="color: #d4af37; margin-bottom: 16px; font-size: 14px;">🌍 거시경제 데이터 입력</h3>
+                <h3 style="color: #d4af37; margin-bottom: 16px; font-size: 14px;">☁️ 데이터 동기화 (기기간 공유)</h3>
+                <p style="font-size: 10px; color: #a8b5cc; margin-bottom: 14px;">
+                    💡 로컬스토리지는 기기별로 격리됩니다. 아래 기능으로 다른 기기에서도 데이터를 사용할 수 있습니다.
+                </p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <button onclick="exportData()" style="background: #22cc88; color: #0a0e27;">📥 데이터 내보내기</button>
+                    <button class="secondary" onclick="importData()" style="background: #2a3456; color: #d4af37;">📤 데이터 가져오기</button>
+                </div>
+
+                <div style="background: rgba(0, 0, 0, 0.2); border-radius: 8px; padding: 12px; font-size: 10px; color: #a8b5cc; line-height: 1.6;">
+                    <strong style="color: #d4af37;">사용 방법:</strong><br>
+                    1️⃣ 현재 기기에서 "데이터 내보내기" 클릭<br>
+                    2️⃣ JSON 파일이 다운로드됨<br>
+                    3️⃣ 다른 기기에서 파일 업로드 (구글 드라이브, 이메일 등)<br>
+                    4️⃣ "데이터 가져오기" 클릭 후 파일 선택<br>
+                    5️⃣ 모든 입력 데이터가 동기화됨 ✅
+                </div>
+
+                <div id="importMessage" style="margin-top: 12px;"></div>
+                <input type="file" id="importInput" accept=".json" style="display: none;">
+            </div>
                 <p style="font-size: 10px; color: #a8b5cc; margin-bottom: 14px;">
                     API 파싱 실패 시 아래에서 수동으로 입력하세요. 저장하면 대시보드 위험 점수 계산에 즉시 반영됩니다.
                 </p>
@@ -712,13 +715,11 @@
     </div>
 
     <script>
-        // 회사 목록
         const companies = ['MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA'];
         let selectedYear = '2026';
         let selectedQuarter = 'Q1';
         let charts = {};
 
-        // 초기화
         document.addEventListener('DOMContentLoaded', () => {
             updateSelectedQuarterDisplay();
             initializeInputs();
@@ -851,7 +852,6 @@
             let chipScore = 0;
             let macroScore = 0;
 
-            // 1. CAPEX + 클라우드 분석 (80% 가중치)
             let capexChangeSum = 0;
             let cloudChangeSum = 0;
             let capexCount = 0;
@@ -875,7 +875,6 @@
                 });
             });
 
-            // CAPEX + 클라우드 평균에 따른 점수 (100점 기준)
             const capexAvg = capexCount > 0 ? capexChangeSum / capexCount : 0;
             const cloudAvg = cloudCount > 0 ? cloudChangeSum / cloudCount : 0;
             const capexCloudAvg = (capexAvg + cloudAvg) / 2;
@@ -886,7 +885,6 @@
             else if (capexCloudAvg > 10) capexScore = 15;
             else capexScore = 5;
 
-            // 2. TSMC + 한국 반도체 (12% 가중치)
             let tsmcVal = 9.5;
             let koreaVal = -1.5;
             if (savedMacroData) {
@@ -898,7 +896,6 @@
             else if (tsmcVal < -5 || koreaVal < -3) chipScore = 8;
             else chipScore = 3;
 
-            // 3. 거시경제 지표 (8% 가중치)
             let jpyVal = 159.20;
             if (savedMacroData) {
                 jpyVal = savedMacroData.jpy || 159.20;
@@ -908,11 +905,9 @@
             else if (jpyVal < 150) macroScore = 5;
             else macroScore = 2;
 
-            // 최종 점수 계산 (가중치 적용: 80% + 12% + 8%)
             score = (capexScore * 0.80) + (chipScore * 0.12) + (macroScore * 0.08);
             score = Math.min(Math.max(Math.round(score), 0), 100);
 
-            // UI 업데이트
             const scoreCircle = document.getElementById('scoreCircle');
             const scoreNumber = document.getElementById('scoreNumber');
             const scoreText = document.getElementById('scoreText');
@@ -935,7 +930,6 @@
                 scoreDesc.textContent = '즉시 대응 필요';
             }
 
-            // 가중치별 점수 표시 (실제 100점 기준으로 표시)
             document.getElementById('scoreCapex').textContent = `${(capexScore * 0.80).toFixed(1)}/100`;
             document.getElementById('scoreChip').textContent = `${(chipScore * 0.12).toFixed(1)}/100`;
             document.getElementById('scoreMacro').textContent = `${(macroScore * 0.08).toFixed(1)}/100`;
@@ -945,16 +939,15 @@
         function updateUI() {
             const { capexData, cloudData } = loadData();
 
-            // CAPEX 요약 (내림차순 정렬, B 표시 제거)
             let capexHtml = '';
-            const capexKeys = Object.keys(capexData).sort().reverse(); // 내림차순
+            const capexKeys = Object.keys(capexData).sort().reverse();
             capexKeys.forEach(period => {
                 const data = capexData[period];
                 const [year, quarter] = period.split('-');
                 let values = [];
                 companies.forEach(company => {
                     if (data[company]) {
-                        values.push(`${company} ${data[company]}`); // B 제거
+                        values.push(`${company} ${data[company]}`);
                     }
                 });
                 if (values.length > 0) {
@@ -963,16 +956,15 @@
             });
             document.getElementById('capexList').innerHTML = capexHtml || '<div style="color: #a8b5cc;">데이터를 입력해주세요</div>';
 
-            // 클라우드 매출 요약 (내림차순 정렬, B 표시 제거)
             let cloudHtml = '';
-            const cloudKeys = Object.keys(cloudData).sort().reverse(); // 내림차순
+            const cloudKeys = Object.keys(cloudData).sort().reverse();
             cloudKeys.forEach(period => {
                 const data = cloudData[period];
                 const [year, quarter] = period.split('-');
                 let values = [];
                 companies.forEach(company => {
                     if (data[company]) {
-                        values.push(`${company} ${data[company]}`); // B 제거
+                        values.push(`${company} ${data[company]}`);
                     }
                 });
                 if (values.length > 0) {
@@ -981,7 +973,6 @@
             });
             document.getElementById('cloudList').innerHTML = cloudHtml || '<div style="color: #a8b5cc;">데이터를 입력해주세요</div>';
 
-            // 괴리도 분석
             let divergenceHtml = '';
             const allKeys = [...new Set([...Object.keys(capexData), ...Object.keys(cloudData)])].sort();
             const latestKey = allKeys[allKeys.length - 1];
@@ -997,31 +988,23 @@
                 const cloudPrevPrev = prevPrevKey ? cloudData[prevPrevKey]?.[company] : null;
 
                 if (capexCurrent && cloudCurrent) {
-                    // QoQ 변화율 계산
                     let capexQoQ = capexPrev ? (((capexCurrent - capexPrev) / capexPrev) * 100) : 0;
                     let cloudQoQ = cloudPrev ? (((cloudCurrent - cloudPrev) / cloudPrev) * 100) : 0;
                     
-                    // YoY 변화율 계산 (4분기 전 비교)
                     let capexYoY = 0;
                     let cloudYoY = 0;
                     if (allKeys.length >= 4) {
-                        const yearAgoKey = allKeys[allKeys.length - 5]; // 4분기 전
+                        const yearAgoKey = allKeys[allKeys.length - 5];
                         const capexYearAgo = capexData[yearAgoKey]?.[company];
                         const cloudYearAgo = cloudData[yearAgoKey]?.[company];
                         if (capexYearAgo) capexYoY = (((capexCurrent - capexYearAgo) / capexYearAgo) * 100);
                         if (cloudYearAgo) cloudYoY = (((cloudCurrent - cloudYearAgo) / cloudYearAgo) * 100);
                     }
 
-                    // 가중 평균 변화율
-                    // CAPEX: QoQ 70% + YoY 30%
                     const capexWeightedChange = (capexQoQ * 0.7) + (capexYoY * 0.3);
-                    // 매출: QoQ 30% + YoY 70%
                     const cloudWeightedChange = (cloudQoQ * 0.3) + (cloudYoY * 0.7);
-
-                    // 괴리도 = CAPEX 성장률 - 매출 성장률
                     const divergence = (capexWeightedChange - cloudWeightedChange).toFixed(1);
 
-                    // 이전 분기 괴리도 계산 (연속 괴리 감지용)
                     let prevDivergence = null;
                     if (capexPrev && cloudPrev && prevPrevKey) {
                         const capexPrevQoQ = prevPrevKey ? (((capexPrev - capexData[prevPrevKey]?.[company]) / capexData[prevPrevKey]?.[company]) * 100) : 0;
@@ -1042,11 +1025,10 @@
                         prevDivergence = capexPrevWeightedChange - cloudPrevWeightedChange;
                     }
 
-                    // 경고 조건: CAPEX 성장률 높음 + 매출 가속도 둔화가 2분기 연속
                     let warningIcon = '';
                     if (capexWeightedChange > 10 && cloudWeightedChange < 5) {
                         if (prevDivergence !== null && prevDivergence > 5) {
-                            warningIcon = ' ⚠️'; // 2분기 연속 괴리
+                            warningIcon = ' ⚠️';
                         }
                     }
 
@@ -1070,18 +1052,6 @@
             document.getElementById('divergenceList').innerHTML = divergenceHtml || '<div style="color: #a8b5cc;">비교 데이터를 입력해주세요</div>';
 
             updateCompanyAnalysis(capexData, cloudData);
-        }
-
-        function getPreviousQuarter(key) {
-            const [year, quarter] = key.split('-');
-            let quarterNum = parseInt(quarter.substring(1));
-            let yearNum = parseInt(year);
-            
-            if (quarterNum === 1) {
-                return `${yearNum - 1}-Q4`;
-            } else {
-                return `${yearNum}-Q${quarterNum - 1}`;
-            }
         }
 
         function updateCompanyAnalysis(capexData, cloudData) {
@@ -1256,7 +1226,6 @@
         }
 
         function loadMacroData() {
-            // localStorage에서 먼저 불러오기
             const savedMacroData = JSON.parse(localStorage.getItem('macro_data') || 'null');
             
             let macroData = {
@@ -1268,12 +1237,10 @@
                 korea: -1.5
             };
 
-            // 저장된 데이터가 있으면 덮어쓰기
             if (savedMacroData) {
                 macroData = { ...macroData, ...savedMacroData };
             }
 
-            // 입력 필드에 값 표시
             document.getElementById('macroFed').value = macroData.fed;
             document.getElementById('macro10Y').value = macroData.us10y;
             document.getElementById('macroJPY').value = macroData.jpy;
@@ -1281,32 +1248,26 @@
             document.getElementById('macroTSMC').value = macroData.tsmc;
             document.getElementById('macroKorea').value = macroData.korea;
 
-            // 대시보드에 표시
             document.getElementById('fed').textContent = `${macroData.fed}%`;
             document.getElementById('us10y').textContent = `${macroData.us10y}%`;
             
-            // JPY 환율
             document.getElementById('jpy').textContent = `${macroData.jpy}¥/$`;
             const jpyVal = macroData.jpy;
             document.getElementById('jpyChange').textContent = jpyVal < 145 ? '엔강화 ↓' : '엔약화 ↑';
             document.getElementById('jpyChange').className = jpyVal < 145 ? 'data-change change-up' : 'data-change change-down';
             
-            // BOJ
             document.getElementById('boj').textContent = `${macroData.boj}%`;
             
-            // TSMC (YoY)
             const tsmcVal = macroData.tsmc;
             document.getElementById('tsmc').textContent = `${tsmcVal > 0 ? '+' : ''}${tsmcVal}%`;
             document.getElementById('tsmcStatus').className = tsmcVal > 0 ? 'data-change change-up' : 'data-change change-down';
             document.getElementById('tsmcStatus').textContent = tsmcVal > 0 ? '증가 ↑' : '감소 ↓';
             
-            // 한국 반도체 (MoM)
             const koreaVal = macroData.korea;
             document.getElementById('koreaChip').textContent = `${koreaVal > 0 ? '+' : ''}${koreaVal}%`;
             document.getElementById('koreaStatus').className = koreaVal > 0 ? 'data-change change-up' : 'data-change change-down';
             document.getElementById('koreaStatus').textContent = koreaVal > 0 ? '증가 ↑' : '감소 ↓';
             
-            // CAPEX 추세
             const { capexData } = loadData();
             let capexAvg = 0;
             let capexCount = 0;
@@ -1324,7 +1285,6 @@
             document.getElementById('capexStatus').className = 'data-change change-up';
             document.getElementById('capexStatus').textContent = '증가 ↑';
 
-            // 마지막 수정 시간 표시
             const macroTime = localStorage.getItem('macro_data_time');
             if (macroTime) {
                 document.getElementById('macroUpdateTime').textContent = macroTime;
@@ -1372,6 +1332,89 @@
                     document.getElementById('macroMessage').innerHTML = '';
                 }, 2000);
             }
+        }
+
+        function exportData() {
+            const capexData = JSON.parse(localStorage.getItem('capex_data') || '{}');
+            const cloudData = JSON.parse(localStorage.getItem('cloud_data') || '{}');
+            const macroData = JSON.parse(localStorage.getItem('macro_data') || '{}');
+
+            const exportedData = {
+                timestamp: new Date().toISOString(),
+                version: "CAPEX Sentinel 2.0 Pro",
+                capex_data: capexData,
+                cloud_data: cloudData,
+                macro_data: macroData
+            };
+
+            const jsonString = JSON.stringify(exportedData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `capex-sentinel-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            document.getElementById('importMessage').innerHTML = 
+                '<div class="success-msg">✅ 데이터 내보내기 완료! 파일이 다운로드되었습니다.</div>';
+            setTimeout(() => {
+                document.getElementById('importMessage').innerHTML = '';
+            }, 3000);
+        }
+
+        function importData() {
+            const fileInput = document.getElementById('importInput');
+            fileInput.click();
+            
+            fileInput.onchange = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        
+                        // 데이터 검증
+                        if (!importedData.capex_data || !importedData.cloud_data) {
+                            throw new Error('잘못된 파일 형식입니다.');
+                        }
+
+                        // localStorage에 저장
+                        if (Object.keys(importedData.capex_data).length > 0) {
+                            localStorage.setItem('capex_data', JSON.stringify(importedData.capex_data));
+                        }
+                        if (Object.keys(importedData.cloud_data).length > 0) {
+                            localStorage.setItem('cloud_data', JSON.stringify(importedData.cloud_data));
+                        }
+                        if (importedData.macro_data && Object.keys(importedData.macro_data).length > 0) {
+                            localStorage.setItem('macro_data', JSON.stringify(importedData.macro_data));
+                            localStorage.setItem('macro_data_time', new Date().toLocaleString('ko-KR'));
+                        }
+
+                        document.getElementById('importMessage').innerHTML = 
+                            '<div class="success-msg">✅ 데이터 가져오기 완료! 페이지를 새로고침하세요.</div>';
+                        
+                        setTimeout(() => {
+                            loadDataToInputs();
+                            loadMacroData();
+                            calculateRiskScore();
+                            updateUI();
+                            document.getElementById('importMessage').innerHTML = '';
+                        }, 1500);
+                    } catch (error) {
+                        document.getElementById('importMessage').innerHTML = 
+                            `<div class="success-msg" style="background: rgba(255, 68, 68, 0.15); color: #ff4444;">❌ 오류: ${error.message}</div>`;
+                        setTimeout(() => {
+                            document.getElementById('importMessage').innerHTML = '';
+                        }, 3000);
+                    }
+                };
+                reader.readAsText(file);
+            };
         }
     </script>
 </body>
