@@ -41,7 +41,7 @@ class CapexMonitor:
                 'FEDFUNDS': ('Fed Rate', 'Fed 기준금리'),
                 'DGS10': ('10Y Treasury', '10년물 수익률'),
                 'DEXJPUS': ('USD/JPY', 'USD/JPY 환율'),
-                'INTBSMF06JPM156N': ('BOJ Rate', 'BOJ 기준금리')
+                'INTBSMF06JPM156N': ('BOJ Policy Rate', 'BOJ 정책금리')
             }
             
             for series_id, (en_name, kr_name) in indicators.items():
