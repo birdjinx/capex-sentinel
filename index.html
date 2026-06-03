@@ -1069,27 +1069,14 @@
             let jpyVal = savedMacroData ? (savedMacroData.jpy || 159.20) : 159.20;
             if (jpyVal < 145) score += 20;
 
-            // 4️⃣ CAPEX 신호 점수 (gap_data 기반)
+            // 4️⃣ CAPEX 신호 점수 (Python 방식: data.json의 capex_signals 사용)
             let capexScore = 0;
-            let criticalCount = 0;
-            let warningCount = 0;
-            let bullishCount = 0;
-            let bullishPlusCount = 0;
-
-            if (gapQuarters.length > 0) {
-                const latestQuarter = gapQuarters[gapQuarters.length - 1];
-                const latestGapData = gapData[latestQuarter] || {};
-
-                Object.keys(latestGapData).forEach(company => {
-                    if (company !== 'weighted_average') {
-                        const gap = latestGapData[company];
-                        if (gap < -10) criticalCount++;
-                        else if (gap < -5) warningCount++;
-                        else if (gap > 100) bullishPlusCount++;
-                        else if (gap > 20) bullishCount++;
-                    }
-                });
-            }
+            const capexSignals = JSON.parse(localStorage.getItem('capex_signals') || '{}');
+            
+            const criticalCount = capexSignals.critical || 0;
+            const warningCount = capexSignals.warning || 0;
+            const bullishCount = capexSignals.bullish || 0;
+            const bullishPlusCount = capexSignals.bullish_plus || 0;
 
             if (criticalCount >= 3) capexScore = 60;
             else if (criticalCount >= 2) capexScore = 45;
@@ -1463,6 +1450,12 @@
                         korea: components.korea_semicon_change || -1.5
                     };
 
+                    // ✅ capex_signals도 함께 저장 (Python 방식 통일)
+                    if (components.capex_signals) {
+                        localStorage.setItem('capex_signals', 
+                            JSON.stringify(components.capex_signals));
+                    }
+
                     // localStorage 저장된 데이터가 있으면 우선순위 부여
                     const savedMacroData = JSON.parse(localStorage.getItem('macro_data') || 'null');
                     if (savedMacroData) {
@@ -1470,6 +1463,7 @@
                     }
 
                     displayMacroData(macroData);
+                    calculateRiskScore();
                 })
                 .catch(error => {
                     // 2. data.json 로드 실패 시 localStorage 또는 기본값 사용
