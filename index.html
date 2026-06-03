@@ -738,19 +738,56 @@
             calculateRiskScore();
             updateUI();
             
-            // 데이터 로드 확실하게 하기 위해 여러 번 실행
-            setTimeout(() => updateUI(), 100);
-            setTimeout(() => updateUI(), 300);
-            setTimeout(() => updateUI(), 500);
+            // 강제 업데이트 (여러 번)
+            setTimeout(() => {
+                loadDataToInputs();
+                updateUI();
+            }, 50);
+            
+            setTimeout(() => {
+                updateUI();
+                calculateRiskScore();
+            }, 200);
+            
+            setTimeout(() => {
+                updateUI();
+            }, 500);
         });
 
-        // 페이지 완전 로드 후에도 실행
+        // 페이지 완전 로드 후
         window.addEventListener('load', () => {
             setTimeout(() => {
+                loadDataToInputs();
                 calculateRiskScore();
                 updateUI();
-            }, 200);
+            }, 300);
         });
+        
+        // 탭 변경할 때도 업데이트
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('[id^="tab"]');
+            tabs.forEach(tab => {
+                tab.style.display = 'none';
+            });
+            
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const tab = document.getElementById(tabName);
+            if (tab) {
+                tab.style.display = 'block';
+            }
+            
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`)?.classList.add('active');
+            
+            // 탭 전환 후 데이터 업데이트
+            setTimeout(() => {
+                updateUI();
+                calculateRiskScore();
+            }, 100);
+        }
 
         function selectQuarter() {
             selectedYear = document.getElementById('yearSelect').value;
