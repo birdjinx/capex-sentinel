@@ -1011,6 +1011,18 @@
             const { capexData, cloudData } = loadData();
             const savedMacroData = JSON.parse(localStorage.getItem('macro_data') || 'null');
             
+            // ========== gap_data에서 빅테크 CAPEX 추세 계산 ==========
+            const gapData = JSON.parse(localStorage.getItem('gap_data') || '{}');
+            const gapQuarters = Object.keys(gapData).sort();
+            let bigtech_capex_trend = 0;
+            
+            if (gapQuarters.length > 0) {
+                const latestQuarter = gapQuarters[gapQuarters.length - 1];
+                if (gapData[latestQuarter] && gapData[latestQuarter]['weighted_average'] !== undefined) {
+                    bigtech_capex_trend = gapData[latestQuarter]['weighted_average'];
+                }
+            }
+            
             let score = 0;
             let capexScore = 0;
             let chipScore = 0;
@@ -1488,7 +1500,11 @@
             });
             capexAvg = capexCount > 0 ? (capexAvg / capexCount) : 0;
             
-            document.getElementById('capexTrend').textContent = capexAvg > 30 ? '+18.5%' : '입력 대기중';
+            // CAPEX 추세값 표시 (gap_data 기반)
+            const capexTrendText = bigtech_capex_trend !== 0 ? 
+                (bigtech_capex_trend > 0 ? '+' : '') + bigtech_capex_trend.toFixed(2) + '%' : 
+                '입력 대기중';
+            document.getElementById('capexTrend').textContent = capexTrendText;
             document.getElementById('capexStatus').className = 'data-change change-up';
             document.getElementById('capexStatus').textContent = '증가 ↑';
 
