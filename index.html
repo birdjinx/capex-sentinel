@@ -1047,95 +1047,89 @@
         }
 
         function calculateRiskScore() {
-            const { capexData, cloudData } = loadData();
             const savedMacroData = JSON.parse(localStorage.getItem('macro_data') || 'null');
-            
-            // ========== gap_data에서 빅테크 CAPEX 추세 계산 ==========
             const gapData = JSON.parse(localStorage.getItem('gap_data') || '{}');
             const gapQuarters = Object.keys(gapData).sort();
-            let bigtech_capex_trend = 0;
-            
-            if (gapQuarters.length > 0) {
-                const latestQuarter = gapQuarters[gapQuarters.length - 1];
-                if (gapData[latestQuarter] && gapData[latestQuarter]['weighted_average'] !== undefined) {
-                    bigtech_capex_trend = gapData[latestQuarter]['weighted_average'];
-                }
-            }
             
             let score = 0;
+
+            // ===== Python 방식과 동일한 계산 =====
+
+            // 1️⃣ TSMC 점수
+            let tsmcVal = savedMacroData ? (savedMacroData.tsmc || 9.5) : 9.5;
+            if (tsmcVal < -10) score += 30;
+            else if (tsmcVal < -5) score += 20;
+
+            // 2️⃣ 한국 반도체 점수
+            let koreaVal = savedMacroData ? (savedMacroData.korea || -1.5) : -1.5;
+            if (koreaVal < -5) score += 25;
+            else if (koreaVal < -3) score += 15;
+
+            // 3️⃣ 엔강화 점수
+            let jpyVal = savedMacroData ? (savedMacroData.jpy || 159.20) : 159.20;
+            if (jpyVal < 145) score += 20;
+
+            // 4️⃣ CAPEX 신호 점수 (gap_data 기반)
             let capexScore = 0;
-            let chipScore = 0;
-            let macroScore = 0;
+            let criticalCount = 0;
+            let warningCount = 0;
+            let bullishCount = 0;
+            let bullishPlusCount = 0;
 
-            let capexChangeSum = 0;
-            let cloudChangeSum = 0;
-            let capexCount = 0;
-            let cloudCount = 0;
-            
-            Object.values(capexData).forEach(periodData => {
-                Object.values(periodData).forEach(value => {
-                    if (value) {
-                        capexChangeSum += Math.abs(value);
-                        capexCount++;
+            if (gapQuarters.length > 0) {
+                const latestQuarter = gapQuarters[gapQuarters.length - 1];
+                const latestGapData = gapData[latestQuarter] || {};
+
+                Object.keys(latestGapData).forEach(company => {
+                    if (company !== 'weighted_average') {
+                        const gap = latestGapData[company];
+                        if (gap < -10) criticalCount++;
+                        else if (gap < -5) warningCount++;
+                        else if (gap > 100) bullishPlusCount++;
+                        else if (gap > 20) bullishCount++;
                     }
                 });
-            });
-            
-            Object.values(cloudData).forEach(periodData => {
-                Object.values(periodData).forEach(value => {
-                    if (value) {
-                        cloudChangeSum += Math.abs(value);
-                        cloudCount++;
-                    }
-                });
-            });
-
-            const capexAvg = capexCount > 0 ? capexChangeSum / capexCount : 0;
-            const cloudAvg = cloudCount > 0 ? cloudChangeSum / cloudCount : 0;
-            const capexCloudAvg = (capexAvg + cloudAvg) / 2;
-            
-            if (capexCloudAvg > 50) capexScore = 30;
-            else if (capexCloudAvg > 35) capexScore = 25;
-            else if (capexCloudAvg > 20) capexScore = 20;
-            else if (capexCloudAvg > 10) capexScore = 15;
-            else capexScore = 5;
-
-            let tsmcVal = 9.5;
-            let koreaVal = -1.5;
-            if (savedMacroData) {
-                tsmcVal = savedMacroData.tsmc || 9.5;
-                koreaVal = savedMacroData.korea || -1.5;
             }
-            
-            if (tsmcVal < -10 || koreaVal < -5) chipScore = 12;
-            else if (tsmcVal < -5 || koreaVal < -3) chipScore = 8;
-            else chipScore = 3;
 
-            let jpyVal = 159.20;
-            if (savedMacroData) {
-                jpyVal = savedMacroData.jpy || 159.20;
-            }
-            
-            if (jpyVal < 145) macroScore = 8;
-            else if (jpyVal < 150) macroScore = 5;
-            else macroScore = 2;
+            if (criticalCount >= 3) capexScore = 60;
+            else if (criticalCount >= 2) capexScore = 45;
+            else if (criticalCount >= 1) capexScore = 30;
+            else if (warningCount >= 3) capexScore = 20;
+            else if (bullishPlusCount >= 2) capexScore = -40;
+            else if (bullishPlusCount >= 1 && bullishCount >= 2) capexScore = -25;
+            else if (bullishCount >= 4) capexScore = -20;
+            else if (bullishCount >= 2) capexScore = -10;
 
-            score = (capexScore * 0.80) + (chipScore * 0.12) + (macroScore * 0.08);
-            score = Math.min(Math.max(Math.round(score), 0), 100);
+            score += capexScore;
+
+            // 범위 조정 (0~100)
+            let finalScore = Math.min(Math.max(score, 0), 100);
+
+            // ===== 점수 표시 항목 업데이트 =====
+            const chipScore = Math.max(0, (tsmcVal < -10 ? 30 : tsmcVal < -5 ? 20 : 0) 
+                                        + (koreaVal < -5 ? 25 : koreaVal < -3 ? 15 : 0));
+            const macroScore = jpyVal < 145 ? 20 : 0;
+
+            document.getElementById('scoreCapex').textContent = 
+                `${Math.max(0, capexScore)}/100`;
+            document.getElementById('scoreChip').textContent = 
+                `${chipScore}/100`;
+            document.getElementById('scoreMacro').textContent = 
+                `${macroScore}/100`;
 
             const scoreCircle = document.getElementById('scoreCircle');
             const scoreNumber = document.getElementById('scoreNumber');
             const scoreText = document.getElementById('scoreText');
             const scoreDesc = document.getElementById('scoreDesc');
 
-            scoreNumber.textContent = score;
+            scoreNumber.textContent = finalScore;
 
             scoreCircle.className = 'score-circle';
-            if (score < 30) {
+            if (finalScore < 30) {
                 scoreCircle.classList.add('safe');
                 scoreText.textContent = 'SAFE (안전)';
                 scoreDesc.textContent = '현재 경제 상황 양호';
-            } else if (score < 60) {
+            } else if (finalScore < 60) {
                 scoreCircle.classList.add('warning');
                 scoreText.textContent = 'WARNING (주의)';
                 scoreDesc.textContent = '주의 깊은 모니터링 필요';
