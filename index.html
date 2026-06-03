@@ -738,10 +738,18 @@
             calculateRiskScore();
             updateUI();
             
-            // 데이터 로드 확실하게 하기 위해 100ms 후 다시 실행
+            // 데이터 로드 확실하게 하기 위해 여러 번 실행
+            setTimeout(() => updateUI(), 100);
+            setTimeout(() => updateUI(), 300);
+            setTimeout(() => updateUI(), 500);
+        });
+
+        // 페이지 완전 로드 후에도 실행
+        window.addEventListener('load', () => {
             setTimeout(() => {
+                calculateRiskScore();
                 updateUI();
-            }, 100);
+            }, 200);
         });
 
         function selectQuarter() {
