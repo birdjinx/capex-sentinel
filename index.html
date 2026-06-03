@@ -1137,21 +1137,35 @@
                 else if (qoqChange > 0) gapScore -= 10;
             }
 
-            // B. CAPEX 신호 (40%)
-            const criticalCount = capexSignals.critical || 0;
-            const warningCount = capexSignals.warning || 0;
-            const bullishCount = capexSignals.bullish || 0;
-            const bullishPlusCount = capexSignals.bullish_plus || 0;
+            // B. CAPEX 신호 - gap_data 기반으로 직접 계산 (수동입력 기반)
+            let criticalCount = 0;
+            let warningCount = 0;
+            let bullishCount = 0;
+            let bullishPlusCount = 0;
+
+            if (gapQuarters.length > 0) {
+                const latest = gapQuarters[gapQuarters.length - 1];
+                const latestGap = gapData[latest] || {};
+                Object.keys(latestGap).forEach(company => {
+                    if (company !== 'weighted_average') {
+                        const gap = latestGap[company];
+                        if (gap < -10)       criticalCount++;
+                        else if (gap < -5)   warningCount++;
+                        else if (gap > 100)  bullishPlusCount++;
+                        else if (gap > 20)   bullishCount++;
+                    }
+                });
+            }
 
             let signalScore = 0;
-            if (criticalCount >= 3)                             signalScore = 100;
-            else if (criticalCount >= 2)                        signalScore = 75;
-            else if (criticalCount >= 1)                        signalScore = 50;
-            else if (warningCount >= 3)                         signalScore = 30;
-            else if (bullishPlusCount >= 2)                     signalScore = -40;
-            else if (bullishPlusCount >= 1 && bullishCount >= 2) signalScore = -25;
-            else if (bullishCount >= 4)                         signalScore = -20;
-            else if (bullishCount >= 2)                         signalScore = -10;
+            if (criticalCount >= 3)                               signalScore = 100;
+            else if (criticalCount >= 2)                          signalScore = 75;
+            else if (criticalCount >= 1)                          signalScore = 50;
+            else if (warningCount >= 3)                           signalScore = 30;
+            else if (bullishPlusCount >= 2)                       signalScore = -40;
+            else if (bullishPlusCount >= 1 && bullishCount >= 2)  signalScore = -25;
+            else if (bullishCount >= 4)                           signalScore = -20;
+            else if (bullishCount >= 2)                           signalScore = -10;
 
             const capexRaw = gapScore * 0.6 + signalScore * 0.4;
             const capexScore = Math.min(Math.max(capexRaw, 0), 100);
