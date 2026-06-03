@@ -517,6 +517,10 @@
                 <div id="capexSummary">
                     <div class="data-label" style="margin-bottom: 8px;">최근 분기 추이</div>
                     <div id="capexList" style="font-size: 12px; line-height: 1.8;">데이터 없음</div>
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #333;">
+                        <div class="data-label" style="margin-bottom: 8px;">분기별 CAPEX-매출 괴리도 추이</div>
+                        <div id="capexHistory" style="font-size: 11px; line-height: 1.8; color: #a0a0a0;">데이터 없음</div>
+                    </div>
                 </div>
             </div>
 
@@ -1001,6 +1005,41 @@
             };
         }
 
+        function updateCapexTrendDisplay() {
+            const gapTrend = calculateGapTrend();
+            const trendColor = gapTrend.trend > 0 ? '#10b981' : gapTrend.trend < 0 ? '#ef4444' : '#8b8b8b';
+            
+            // 빅테크 CAPEX 추세값 업데이트
+            const capexTrendEl = document.getElementById('capexTrend');
+            if (capexTrendEl && gapTrend.current !== 0) {
+                capexTrendEl.textContent = 
+                    `${gapTrend.current > 0 ? '+' : ''}${gapTrend.current}% ${gapTrend.direction}`;
+                capexTrendEl.style.color = trendColor;
+            }
+            
+            // 전분기 대비 업데이트
+            const capexStatusEl = document.getElementById('capexStatus');
+            if (capexStatusEl && gapTrend.current !== 0) {
+                capexStatusEl.textContent = 
+                    `전분기 대비 ${gapTrend.trend > 0 ? '+' : ''}${gapTrend.trend}%`;
+            }
+            
+            // 분기별 괴리도 추이 히스토리 표시
+            const gapData = JSON.parse(localStorage.getItem('gap_data') || '{}');
+            const quarters = Object.keys(gapData).sort();
+            if (quarters.length > 0) {
+                const historyText = quarters.slice(-5).map(q => {
+                    const val = gapData[q].weighted_average;
+                    return `${q}: ${val > 0 ? '+' : ''}${val}%`;
+                }).join(' → ');
+                
+                const historyDiv = document.getElementById('capexHistory');
+                if (historyDiv) {
+                    historyDiv.textContent = historyText;
+                }
+            }
+        }
+
         function loadData() {
             const capexData = JSON.parse(localStorage.getItem('capex_data') || '{}');
             const cloudData = JSON.parse(localStorage.getItem('cloud_data') || '{}');
@@ -1114,6 +1153,13 @@
 
         function updateUI() {
             const { capexData, cloudData } = loadData();
+            
+            // 괴리도 추이 화면 업데이트
+            try {
+                updateCapexTrendDisplay();
+            } catch(e) {
+                console.error('괴리도 추이 표시 오류:', e);
+            }
 
             let capexHtml = '';
             const capexKeys = Object.keys(capexData).sort().reverse();
