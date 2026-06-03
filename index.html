@@ -726,6 +726,8 @@
                 initializeInputs();
                 loadDataToInputs();
                 loadMacroData();
+                // 괴리도 자동 계산
+                saveGapData();
             } catch (e) {
                 console.error('초기화 오류:', e);
             }
@@ -828,6 +830,14 @@
             });
 
             localStorage.setItem('capex_data', JSON.stringify(data));
+            
+            // 괴리도 자동 계산
+            try {
+                saveGapData();
+            } catch (e) {
+                console.error('괴리도 계산 오류:', e);
+            }
+            
             document.getElementById('capexMessage').innerHTML = 
                 '<div class="success-msg">✅ CAPEX 데이터 저장 완료!</div>';
             
@@ -856,6 +866,14 @@
             });
 
             localStorage.setItem('cloud_data', JSON.stringify(data));
+            
+            // 괴리도 자동 계산
+            try {
+                saveGapData();
+            } catch (e) {
+                console.error('괴리도 계산 오류:', e);
+            }
+            
             document.getElementById('cloudMessage').innerHTML = 
                 '<div class="success-msg">✅ 클라우드 매출 저장 완료!</div>';
             
@@ -869,6 +887,118 @@
                     updateUI(); // 강제 실행
                 }
             }, 2000);
+        }
+
+        // ========== 괴리도 계산 함수들 ==========
+        
+        /**
+         * 변화율 계산 (QoQ/YoY 가중 평균)
+         * @param {object} data - 데이터 객체 (분기별)
+         * @param {string} company - 기업명
+         * @param {string} currentKey - 현재 분기 (예: "2026-Q1")
+         * @param {boolean} isCapex - CAPEX 여부 (true면 QoQ 70%, YoY 30% / false면 반대)
+         */
+        function calculateChangeRate(data, company, currentKey, isCapex) {
+            const quarters = Object.keys(data).filter(k => data[k][company] !== undefined).sort();
+            if (quarters.length < 2) return 0;
+            
+            const currentIdx = quarters.indexOf(currentKey);
+            if (currentIdx < 0) return 0;
+            
+            const currentVal = parseFloat(data[currentKey][company]) || 0;
+            
+            // QoQ (직전 분기)
+            let qoq = 0;
+            if (currentIdx > 0) {
+                const prevVal = parseFloat(data[quarters[currentIdx - 1]][company]) || 0;
+                qoq = prevVal > 0 ? ((currentVal - prevVal) / prevVal) * 100 : 0;
+            }
+            
+            // YoY (작년 같은 분기)
+            let yoy = 0;
+            const currentQuarter = currentKey.split('-')[1];
+            const lastYearKey = `${parseInt(currentKey.split('-')[0]) - 1}-${currentQuarter}`;
+            if (data[lastYearKey] && data[lastYearKey][company]) {
+                const lastYearVal = parseFloat(data[lastYearKey][company]) || 0;
+                yoy = lastYearVal > 0 ? ((currentVal - lastYearVal) / lastYearVal) * 100 : 0;
+            }
+            
+            // 가중치 적용
+            if (isCapex) {
+                return qoq * 0.70 + yoy * 0.30; // CAPEX: QoQ 70%, YoY 30%
+            } else {
+                return qoq * 0.30 + yoy * 0.70; // 매출: QoQ 30%, YoY 70%
+            }
+        }
+        
+        /**
+         * 기업별 괴리도 계산 (CAPEX 변화율 - 매출 변화율)
+         */
+        function calculateGapForCompany(capexData, cloudData, company, quarter) {
+            const capexChange = calculateChangeRate(capexData, company, quarter, true);
+            const cloudChange = calculateChangeRate(cloudData, company, quarter, false);
+            return capexChange - cloudChange;
+        }
+        
+        /**
+         * 모든 기업의 괴리도를 저장
+         */
+        function saveGapData() {
+            const capexData = JSON.parse(localStorage.getItem('capex_data') || '{}');
+            const cloudData = JSON.parse(localStorage.getItem('cloud_data') || '{}');
+            const gapData = JSON.parse(localStorage.getItem('gap_data') || '{}');
+            
+            const quarters = Object.keys(capexData).sort();
+            const weights = { 'MSFT': 0.30, 'GOOGL': 0.25, 'AMZN': 0.25, 'META': 0.15, 'TSLA': 0.05 };
+            
+            quarters.forEach(quarter => {
+                let totalGap = 0;
+                let gapByCompany = {};
+                
+                companies.forEach(company => {
+                    if (capexData[quarter] && capexData[quarter][company] && 
+                        cloudData[quarter] && cloudData[quarter][company]) {
+                        const gap = calculateGapForCompany(capexData, cloudData, company, quarter);
+                        gapByCompany[company] = parseFloat(gap.toFixed(2));
+                        totalGap += gap * weights[company];
+                    }
+                });
+                
+                gapByCompany['weighted_average'] = parseFloat(totalGap.toFixed(2));
+                gapData[quarter] = gapByCompany;
+            });
+            
+            localStorage.setItem('gap_data', JSON.stringify(gapData));
+        }
+        
+        /**
+         * 괴리도 추이 계산 (현재 vs 이전 분기)
+         */
+        function calculateGapTrend() {
+            const gapData = JSON.parse(localStorage.getItem('gap_data') || '{}');
+            const quarters = Object.keys(gapData).sort();
+            
+            if (quarters.length < 2) {
+                return { current: 0, previous: 0, trend: 0, direction: '→' };
+            }
+            
+            const currentQuarter = quarters[quarters.length - 1];
+            const previousQuarter = quarters[quarters.length - 2];
+            
+            const currentGap = gapData[currentQuarter]['weighted_average'] || 0;
+            const previousGap = gapData[previousQuarter]['weighted_average'] || 0;
+            const trend = currentGap - previousGap;
+            
+            let direction = '→';
+            if (trend > 0.5) direction = '↗';
+            else if (trend < -0.5) direction = '↘';
+            
+            return {
+                current: parseFloat(currentGap.toFixed(2)),
+                previous: parseFloat(previousGap.toFixed(2)),
+                trend: parseFloat(trend.toFixed(2)),
+                direction: direction
+            };
         }
 
         function loadData() {
