@@ -105,44 +105,23 @@ class CapexMonitor:
             self.data['components']['boj_rate'] = 0.75  # 기본값
             print(f"  ℹ️  BOJ 기준금리: 기본값 사용 (수동 입력 대기)")
 
-    def load_sec_signals(self):
-        """SEC CAPEX 신호 데이터 로드 + 빅테크 CAPEX 트렌드 계산"""
-        try:
-            if os.path.exists('data_sec_capex.json'):
-                with open('data_sec_capex.json', 'r', encoding='utf-8') as f:
-                    sec_data = json.load(f)
-                    signals = sec_data.get('signal_summary', {})
-                    self.data['components']['capex_signals'] = signals
-                    
-                    # 빅테크 CAPEX 트렌드 계산 (가중치 평균)
-                    capex_by_company = sec_data.get('capex_by_company', {})
-                    
-                    weights = {
-                        'MSFT': 0.30,
-                        'GOOGL': 0.25,
-                        'AMZN': 0.25,
-                        'META': 0.15,
-                        'TSLA': 0.05
-                    }
-                    
-                    weighted_capex_trend = 0
-                    valid_count = 0
-                    
-                    for ticker, weight in weights.items():
-                        if ticker in capex_by_company:
-                            qoq = capex_by_company[ticker].get('latest_qoq', 0)
-                            weighted_capex_trend += qoq * weight
-                            valid_count += 1
-                    
-                    if valid_count > 0:
-                        self.data['components']['bigtech_capex_trend'] = weighted_capex_trend
-                        print(f"  ✅ 빅테크 CAPEX 트렌드: {weighted_capex_trend:+.1f}%")
-                    
-                    return signals
-        except Exception as e:
-            print(f"⚠️  SEC 신호 로드 오류: {e}")
+    def set_capex_defaults(self):
+        """CAPEX 신호는 대시보드 수동입력 기반으로 계산
+        Python에서는 기본값만 설정 (실제 계산은 대시보드에서)"""
+        print("\n📊 CAPEX 신호: 대시보드 수동입력 기반 사용")
+        print("  ✅ capex_signals → 대시보드에서 gap_data 기반 계산")
+        print("  ✅ bigtech_capex_trend → 대시보드에서 괴리도 기반 계산")
         
-        return {}
+        # Python에서는 빈값 설정 (대시보드에서 계산)
+        if 'capex_signals' not in self.data['components']:
+            self.data['components']['capex_signals'] = {
+                'critical': 0,
+                'warning': 0,
+                'normal': 0,
+                'bullish': 0,
+                'bullish_plus': 0
+            }
+
 
     def fetch_tsmc_data(self):
         """B) TSMC 데이터 - yfinance API ✅"""
@@ -211,38 +190,6 @@ class CapexMonitor:
             print(f"❌ 한국 반도체 오류: {e}")
             self.data['components']['korea_semicon_exports'] = 2850000000
             self.data['components']['korea_semicon_change'] = -2.0
-            return False
-
-    def fetch_sec_capex_data(self):
-        """D) 빅테크 CAPEX - SEC EDGAR API ✅"""
-        try:
-            print("\n📈 [SEC EDGAR] 빅테크 CAPEX 수집 중...")
-            
-            companies = ['GOOGL', 'AAPL', 'AMZN', 'MSFT', 'META', 'NVDA', 'TSLA']
-            found_count = 0
-            
-            for ticker in companies[:4]:
-                try:
-                    url = f'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company_name={ticker}&type=10-Q&dateb=&owner=exclude&count=10'
-                    resp = requests.get(url, timeout=10)
-                    
-                    if resp.status_code == 200 and '10-Q' in resp.text:
-                        print(f"  ✅ {ticker}: 최근 10-Q 발견")
-                        found_count += 1
-                    
-                    time.sleep(0.5)
-                    
-                except:
-                    pass
-            
-            capex_trend = -6.5
-            self.data['components']['bigtech_capex_trend'] = capex_trend
-            print(f"  ✅ 빅테크 CAPEX 트렌드: {capex_trend:.1f}%")
-            return True
-            
-        except Exception as e:
-            print(f"❌ SEC CAPEX 오류: {e}")
-            self.data['components']['bigtech_capex_trend'] = -6.5
             return False
 
     def calculate_risk_score(self):
@@ -448,12 +395,12 @@ class CapexMonitor:
         print("CAPEX Sentinel - 최종 안정화 버전")
         print("=" * 70)
         
-        self.fetch_fred_data()
-        self.fetch_tsmc_data()
-        self.fetch_korea_semicon_exports()
-        self.load_sec_signals()
-        self.calculate_risk_score()
-        self.save_data()
+        self.fetch_fred_data()       # 거시경제 (FRED API)
+        self.fetch_tsmc_data()       # TSMC 데이터
+        self.fetch_korea_semicon_exports()  # 한국 반도체
+        self.set_capex_defaults()    # CAPEX 기본값 설정 (실제 계산은 대시보드)
+        self.calculate_risk_score()  # 위험도 계산
+        self.save_data()             # data.json 저장
         
         print("=" * 70)
         print("완료!")
