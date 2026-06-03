@@ -37,7 +37,8 @@ class CapexMonitor:
             indicators = {
                 'FEDFUNDS': ('Fed Rate', 'Fed 기준금리'),
                 'DGS10': ('10Y Treasury', '10년물 수익률'),
-                'DEXJPUS': ('USD/JPY', 'USD/JPY 환율')
+                'DEXJPUS': ('USD/JPY', 'USD/JPY 환율'),
+                'BAMLH0A0HYM2': ('HY Spread', '하이일드 스프레드')
             }
             
             for series_id, (en_name, kr_name) in indicators.items():
@@ -72,6 +73,8 @@ class CapexMonitor:
                                     continue
                                 elif series_id == 'DEXJPUS' and (value < 100 or value > 200):
                                     continue
+                                elif series_id == 'BAMLH0A0HYM2' and (value < 0 or value > 30):
+                                    continue
                                 
                                 if series_id == 'FEDFUNDS':
                                     self.data['components']['fed_rate'] = value
@@ -82,6 +85,9 @@ class CapexMonitor:
                                 elif series_id == 'DEXJPUS':
                                     self.data['components']['jpy_usd'] = value
                                     print(f"  ✅ USD/JPY: {value:.2f} ({date})")
+                                elif series_id == 'BAMLH0A0HYM2':
+                                    self.data['components']['hy_spread'] = value
+                                    print(f"  ✅ 하이일드 스프레드: {value:.2f}% ({date})")
                             
                             except ValueError:
                                 pass
@@ -240,75 +246,188 @@ class CapexMonitor:
             return False
 
     def calculate_risk_score(self):
-        """위험 점수 계산"""
+        """위험 점수 계산 - 3범주 가중치 방식 (거시8% + 반도체12% + CAPEX80%)"""
         try:
             print("\n🎯 위험 점수 계산 중...")
-            
-            score = 0
             comp = self.data['components']
-            
+
+            # ================================================================
+            # 1️⃣ 거시경제 지표 (0~100점 기준 → × 0.08 = 최대 8점)
+            # ================================================================
+            macro_score = 0
+
+            # Fed 기준금리
+            fed_rate = comp.get('fed_rate', 3.63)
+            if fed_rate > 5.0:
+                macro_score += 30
+                print(f"  Fed 고금리(>{5.0}%): +30점")
+            elif fed_rate > 4.0:
+                macro_score += 15
+                print(f"  Fed 상승({fed_rate:.2f}%): +15점")
+
+            # 10년물 수익률
+            us_10y = comp.get('us_10y_yield', 4.47)
+            if us_10y > 5.0:
+                macro_score += 20
+                print(f"  10Y 고수익률(>{5.0}%): +20점")
+            elif us_10y > 4.5:
+                macro_score += 10
+                print(f"  10Y 상승({us_10y:.2f}%): +10점")
+
+            # 장단기 역전 (10Y - Fed)
+            spread = us_10y - fed_rate
+            if spread < 0:
+                macro_score += 30
+                print(f"  장단기 역전({spread:.2f}%p): +30점 ⚠️")
+            elif spread < 0.5:
+                macro_score += 10
+                print(f"  장단기 역전 임박({spread:.2f}%p): +10점")
+
+            # 엔 캐리 청산 (가중치 상향)
+            jpy_usd = comp.get('jpy_usd', 159)
+            if jpy_usd < 140:
+                macro_score += 50
+                print(f"  엔 급강화({jpy_usd:.2f}): +50점 🚨 캐리청산 위험!")
+            elif jpy_usd < 145:
+                macro_score += 35
+                print(f"  엔강화({jpy_usd:.2f}): +35점")
+            elif jpy_usd > 160:
+                macro_score += 10
+                print(f"  엔약세 극단({jpy_usd:.2f}): +10점")
+
+            # 하이일드 스프레드 (신규)
+            hy_spread = comp.get('hy_spread', 3.0)
+            if hy_spread > 6.0:
+                macro_score += 50
+                print(f"  HY스프레드 위험({hy_spread:.2f}%): +50점 🚨")
+            elif hy_spread > 5.0:
+                macro_score += 30
+                print(f"  HY스프레드 경고({hy_spread:.2f}%): +30점")
+            elif hy_spread > 4.0:
+                macro_score += 15
+                print(f"  HY스프레드 주의({hy_spread:.2f}%): +15점")
+
+            macro_score = min(macro_score, 100)
+            macro_weighted = macro_score * 0.08
+            print(f"  → 거시경제 점수: {macro_score}/100 × 8% = {macro_weighted:.1f}점")
+
+            # ================================================================
+            # 2️⃣ TSMC + 반도체 (0~100점 기준 → × 0.12 = 최대 12점)
+            # ================================================================
+            chip_score = 0
+
             tsmc_yoy = comp.get('tsmc_yoy', 0)
             if tsmc_yoy < -10:
-                score += 30
-                print(f"  TSMC 급감: +30점")
+                chip_score += 50
+                print(f"  TSMC 급감({tsmc_yoy:.1f}%): +50점")
             elif tsmc_yoy < -5:
-                score += 20
-                print(f"  TSMC 하락: +20점")
-            
+                chip_score += 30
+                print(f"  TSMC 하락({tsmc_yoy:.1f}%): +30점")
+            elif tsmc_yoy < 0:
+                chip_score += 15
+                print(f"  TSMC 소폭 하락({tsmc_yoy:.1f}%): +15점")
+
             korea_change = comp.get('korea_semicon_change', 0)
             if korea_change < -5:
-                score += 25
-                print(f"  한국 반도체 급감: +25점")
+                chip_score += 50
+                print(f"  한국 반도체 급감({korea_change:.1f}%): +50점")
             elif korea_change < -3:
-                score += 15
-                print(f"  한국 반도체 하락: +15점")
-            
-            jpy_usd = comp.get('jpy_usd', 150)
-            if jpy_usd and jpy_usd < 145:
-                score += 20
-                print(f"  엔강화: +20점")
-            
+                chip_score += 30
+                print(f"  한국 반도체 하락({korea_change:.1f}%): +30점")
+            elif korea_change < 0:
+                chip_score += 15
+                print(f"  한국 반도체 소폭 하락({korea_change:.1f}%): +15점")
+
+            chip_score = min(chip_score, 100)
+            chip_weighted = chip_score * 0.12
+            print(f"  → 반도체 점수: {chip_score}/100 × 12% = {chip_weighted:.1f}점")
+
+            # ================================================================
+            # 3️⃣ CAPEX (0~100점 기준 → × 0.80 = 최대 80점)
+            # ================================================================
+
+            # A. 괴리도 추세 (60%)
+            gap_avg = comp.get('bigtech_capex_trend', 0)
+            if gap_avg < -10:
+                gap_score = 100
+                print(f"  CAPEX 급감(괴리도 {gap_avg:.1f}%): 100점 🚨")
+            elif gap_avg < 0:
+                gap_score = 70
+                print(f"  CAPEX 위축(괴리도 {gap_avg:.1f}%): 70점")
+            elif gap_avg < 20:
+                gap_score = 25
+                print(f"  CAPEX 주의(괴리도 {gap_avg:.1f}%): 25점")
+            elif gap_avg < 50:
+                gap_score = 0
+                print(f"  CAPEX 중립(괴리도 {gap_avg:.1f}%): 0점")
+            elif gap_avg < 100:
+                gap_score = -20
+                print(f"  CAPEX Bullish(괴리도 {gap_avg:.1f}%): -20점")
+            elif gap_avg < 150:
+                gap_score = -35
+                print(f"  CAPEX 매우 Bullish(괴리도 {gap_avg:.1f}%): -35점")
+            else:
+                gap_score = 25
+                print(f"  CAPEX 버블 경보(괴리도 {gap_avg:.1f}%): +25점 ⚠️")
+
+            # B. CAPEX 신호 (40%)
             capex_signals = comp.get('capex_signals', {})
             critical_count = capex_signals.get('critical', 0)
             warning_count = capex_signals.get('warning', 0)
             bullish_count = capex_signals.get('bullish', 0)
             bullish_plus_count = capex_signals.get('bullish_plus', 0)
-            
+
             if critical_count >= 3:
-                capex_impact = 60
+                signal_score = 100
             elif critical_count >= 2:
-                capex_impact = 45
+                signal_score = 75
             elif critical_count >= 1:
-                capex_impact = 30
+                signal_score = 50
             elif warning_count >= 3:
-                capex_impact = 20
+                signal_score = 30
             elif bullish_plus_count >= 2:
-                capex_impact = -40
+                signal_score = -40
             elif bullish_plus_count >= 1 and bullish_count >= 2:
-                capex_impact = -25
+                signal_score = -25
             elif bullish_count >= 4:
-                capex_impact = -20
+                signal_score = -20
             elif bullish_count >= 2:
-                capex_impact = -10
+                signal_score = -10
             else:
-                capex_impact = 0
-            
-            score += capex_impact
-            final_score = min(max(score, 0), 100)
+                signal_score = 0
+
+            print(f"  신호(critical={critical_count}, bullish_plus={bullish_plus_count}): {signal_score}점")
+
+            capex_raw = gap_score * 0.6 + signal_score * 0.4
+            capex_score = min(max(capex_raw, 0), 100)
+            capex_weighted = capex_score * 0.80
+            print(f"  → CAPEX 점수: {capex_score:.1f}/100 × 80% = {capex_weighted:.1f}점")
+
+            # ================================================================
+            # 최종 합산
+            # ================================================================
+            final_score = macro_weighted + chip_weighted + capex_weighted
+            final_score = round(min(max(final_score, 0), 100), 1)
+
             self.data['risk_score'] = final_score
-            
-            if final_score >= 70:
+            self.data['components']['score_breakdown'] = {
+                'macro': round(macro_weighted, 1),
+                'chip': round(chip_weighted, 1),
+                'capex': round(capex_weighted, 1)
+            }
+
+            if final_score >= 60:
                 self.data['status'] = 'CRITICAL'
                 status_emoji = '🔴'
-            elif final_score >= 40:
+            elif final_score >= 30:
                 self.data['status'] = 'WARNING'
                 status_emoji = '🟠'
             else:
                 self.data['status'] = 'NORMAL'
                 status_emoji = '✅'
-            
+
             print(f"\n최종 위험도: {final_score:.1f}/100 {status_emoji} {self.data['status']}")
-            
+
         except Exception as e:
             print(f"❌ 점수 계산 오류: {e}")
 
