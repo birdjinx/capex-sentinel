@@ -721,12 +721,36 @@
         let charts = {};
 
         document.addEventListener('DOMContentLoaded', () => {
-            updateSelectedQuarterDisplay();
-            initializeInputs();
-            loadDataToInputs();
-            loadMacroData();
-            calculateRiskScore();
-            updateUI();
+            try {
+                updateSelectedQuarterDisplay();
+                initializeInputs();
+                loadDataToInputs();
+                loadMacroData();
+            } catch (e) {
+                console.error('초기화 오류:', e);
+            }
+            
+            // 위험도 계산 및 UI 업데이트 (에러 처리 포함)
+            try {
+                calculateRiskScore();
+            } catch (e) {
+                console.error('위험도 계산 오류:', e);
+            }
+            
+            try {
+                updateUI();
+            } catch (e) {
+                console.error('UI 업데이트 오류:', e);
+            }
+            
+            // 타이밍 문제 해결: 추가 업데이트 호출
+            setTimeout(() => {
+                try {
+                    updateUI();
+                } catch (e) {
+                    console.error('UI 재업데이트 오류:', e);
+                }
+            }, 500);
         });
 
         function selectQuarter() {
@@ -809,8 +833,13 @@
             
             setTimeout(() => {
                 document.getElementById('capexMessage').innerHTML = '';
-                calculateRiskScore();
-                updateUI();
+                try {
+                    calculateRiskScore();
+                    updateUI();
+                } catch (e) {
+                    console.error('저장 후 업데이트 오류:', e);
+                    updateUI(); // 강제 실행
+                }
             }, 2000);
         }
 
@@ -832,8 +861,13 @@
             
             setTimeout(() => {
                 document.getElementById('cloudMessage').innerHTML = '';
-                calculateRiskScore();
-                updateUI();
+                try {
+                    calculateRiskScore();
+                    updateUI();
+                } catch (e) {
+                    console.error('클라우드 저장 후 업데이트 오류:', e);
+                    updateUI(); // 강제 실행
+                }
             }, 2000);
         }
 
