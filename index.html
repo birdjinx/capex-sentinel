@@ -1050,59 +1050,126 @@
             const savedMacroData = JSON.parse(localStorage.getItem('macro_data') || 'null');
             const gapData = JSON.parse(localStorage.getItem('gap_data') || '{}');
             const gapQuarters = Object.keys(gapData).sort();
-            
-            let score = 0;
-
-            // ===== Python 방식과 동일한 계산 =====
-
-            // 1️⃣ TSMC 점수
-            let tsmcVal = savedMacroData ? (savedMacroData.tsmc || 9.5) : 9.5;
-            if (tsmcVal < -10) score += 30;
-            else if (tsmcVal < -5) score += 20;
-
-            // 2️⃣ 한국 반도체 점수
-            let koreaVal = savedMacroData ? (savedMacroData.korea || -1.5) : -1.5;
-            if (koreaVal < -5) score += 25;
-            else if (koreaVal < -3) score += 15;
-
-            // 3️⃣ 엔강화 점수
-            let jpyVal = savedMacroData ? (savedMacroData.jpy || 159.20) : 159.20;
-            if (jpyVal < 145) score += 20;
-
-            // 4️⃣ CAPEX 신호 점수 (Python 방식: data.json의 capex_signals 사용)
-            let capexScore = 0;
             const capexSignals = JSON.parse(localStorage.getItem('capex_signals') || '{}');
-            
+
+            // ================================================================
+            // 1️⃣ 거시경제 (0~100점 → × 0.08 = 최대 8점)
+            // ================================================================
+            let macroScore = 0;
+
+            const fedRate = savedMacroData?.fed || 3.63;
+            const us10y = savedMacroData?.us10y || 4.47;
+            const jpyUsd = savedMacroData?.jpy || 159.20;
+            const hySpread = savedMacroData?.hy_spread || 3.0;
+
+            // Fed 기준금리
+            if (fedRate > 5.0) macroScore += 30;
+            else if (fedRate > 4.0) macroScore += 15;
+
+            // 10Y 수익률
+            if (us10y > 5.0) macroScore += 20;
+            else if (us10y > 4.5) macroScore += 10;
+
+            // 장단기 역전 (10Y - Fed)
+            const yieldSpread = us10y - fedRate;
+            if (yieldSpread < 0) macroScore += 30;
+            else if (yieldSpread < 0.5) macroScore += 10;
+
+            // 엔 캐리 (가중치 상향)
+            if (jpyUsd < 140) macroScore += 50;
+            else if (jpyUsd < 145) macroScore += 35;
+            else if (jpyUsd > 160) macroScore += 10;
+
+            // 하이일드 스프레드 (신규)
+            if (hySpread > 6.0) macroScore += 50;
+            else if (hySpread > 5.0) macroScore += 30;
+            else if (hySpread > 4.0) macroScore += 15;
+
+            macroScore = Math.min(macroScore, 100);
+            const macroWeighted = macroScore * 0.08;
+
+            // ================================================================
+            // 2️⃣ TSMC + 반도체 (0~100점 → × 0.12 = 최대 12점)
+            // ================================================================
+            let chipScore = 0;
+
+            const tsmcYoy = savedMacroData?.tsmc || 9.5;
+            const koreaChange = savedMacroData?.korea || -1.5;
+
+            if (tsmcYoy < -10) chipScore += 50;
+            else if (tsmcYoy < -5) chipScore += 30;
+            else if (tsmcYoy < 0) chipScore += 15;
+
+            if (koreaChange < -5) chipScore += 50;
+            else if (koreaChange < -3) chipScore += 30;
+            else if (koreaChange < 0) chipScore += 15;
+
+            chipScore = Math.min(chipScore, 100);
+            const chipWeighted = chipScore * 0.12;
+
+            // ================================================================
+            // 3️⃣ CAPEX (0~100점 → × 0.80 = 최대 80점)
+            // ================================================================
+
+            // A. 괴리도 추세 (60%)
+            let gapAvg = 0;
+            if (gapQuarters.length > 0) {
+                const latest = gapQuarters[gapQuarters.length - 1];
+                gapAvg = gapData[latest]?.weighted_average || 0;
+            }
+
+            let gapScore = 0;
+            if (gapAvg < -10)       gapScore = 100;
+            else if (gapAvg < 0)    gapScore = 70;
+            else if (gapAvg < 20)   gapScore = 25;
+            else if (gapAvg < 50)   gapScore = 0;
+            else if (gapAvg < 100)  gapScore = -20;
+            else if (gapAvg < 150)  gapScore = -35;
+            else                    gapScore = 25;  // 버블 경보 (>150%)
+
+            // 전분기 대비 추세 방향성
+            if (gapQuarters.length >= 2) {
+                const prev = gapQuarters[gapQuarters.length - 2];
+                const prevGap = gapData[prev]?.weighted_average || 0;
+                const qoqChange = gapAvg - prevGap;
+                if (qoqChange < -30) gapScore += 25;
+                else if (qoqChange < -10) gapScore += 15;
+                else if (qoqChange > 0) gapScore -= 10;
+            }
+
+            // B. CAPEX 신호 (40%)
             const criticalCount = capexSignals.critical || 0;
             const warningCount = capexSignals.warning || 0;
             const bullishCount = capexSignals.bullish || 0;
             const bullishPlusCount = capexSignals.bullish_plus || 0;
 
-            if (criticalCount >= 3) capexScore = 60;
-            else if (criticalCount >= 2) capexScore = 45;
-            else if (criticalCount >= 1) capexScore = 30;
-            else if (warningCount >= 3) capexScore = 20;
-            else if (bullishPlusCount >= 2) capexScore = -40;
-            else if (bullishPlusCount >= 1 && bullishCount >= 2) capexScore = -25;
-            else if (bullishCount >= 4) capexScore = -20;
-            else if (bullishCount >= 2) capexScore = -10;
+            let signalScore = 0;
+            if (criticalCount >= 3)                             signalScore = 100;
+            else if (criticalCount >= 2)                        signalScore = 75;
+            else if (criticalCount >= 1)                        signalScore = 50;
+            else if (warningCount >= 3)                         signalScore = 30;
+            else if (bullishPlusCount >= 2)                     signalScore = -40;
+            else if (bullishPlusCount >= 1 && bullishCount >= 2) signalScore = -25;
+            else if (bullishCount >= 4)                         signalScore = -20;
+            else if (bullishCount >= 2)                         signalScore = -10;
 
-            score += capexScore;
+            const capexRaw = gapScore * 0.6 + signalScore * 0.4;
+            const capexScore = Math.min(Math.max(capexRaw, 0), 100);
+            const capexWeighted = capexScore * 0.80;
 
-            // 범위 조정 (0~100)
-            let finalScore = Math.min(Math.max(score, 0), 100);
+            // ================================================================
+            // 최종 합산
+            // ================================================================
+            let finalScore = macroWeighted + chipWeighted + capexWeighted;
+            finalScore = Math.round(Math.min(Math.max(finalScore, 0), 100));
 
-            // ===== 점수 표시 항목 업데이트 =====
-            const chipScore = Math.max(0, (tsmcVal < -10 ? 30 : tsmcVal < -5 ? 20 : 0) 
-                                        + (koreaVal < -5 ? 25 : koreaVal < -3 ? 15 : 0));
-            const macroScore = jpyVal < 145 ? 20 : 0;
-
-            document.getElementById('scoreCapex').textContent = 
-                `${Math.max(0, capexScore)}/100`;
-            document.getElementById('scoreChip').textContent = 
-                `${chipScore}/100`;
-            document.getElementById('scoreMacro').textContent = 
-                `${macroScore}/100`;
+            // 점수 항목 표시
+            document.getElementById('scoreCapex').textContent =
+                `${capexWeighted.toFixed(1)}/80`;
+            document.getElementById('scoreChip').textContent =
+                `${chipWeighted.toFixed(1)}/12`;
+            document.getElementById('scoreMacro').textContent =
+                `${macroWeighted.toFixed(1)}/8`;
 
             const scoreCircle = document.getElementById('scoreCircle');
             const scoreNumber = document.getElementById('scoreNumber');
@@ -1110,20 +1177,20 @@
             const scoreDesc = document.getElementById('scoreDesc');
 
             scoreNumber.textContent = finalScore;
-
             scoreCircle.className = 'score-circle';
-            if (finalScore < 30) {
-                scoreCircle.classList.add('safe');
-                scoreText.textContent = 'SAFE (안전)';
-                scoreDesc.textContent = '현재 경제 상황 양호';
-            } else if (finalScore < 60) {
+
+            if (finalScore >= 60) {
+                scoreCircle.classList.add('critical');
+                scoreText.textContent = 'CRITICAL (위험)';
+                scoreDesc.textContent = '즉시 대응 필요';
+            } else if (finalScore >= 30) {
                 scoreCircle.classList.add('warning');
                 scoreText.textContent = 'WARNING (주의)';
                 scoreDesc.textContent = '주의 깊은 모니터링 필요';
             } else {
-                scoreCircle.classList.add('critical');
-                scoreText.textContent = 'CRITICAL (위험)';
-                scoreDesc.textContent = '즉시 대응 필요';
+                scoreCircle.classList.add('safe');
+                scoreText.textContent = 'SAFE (안전)';
+                scoreDesc.textContent = '현재 경제 상황 양호';
             }
 
             document.getElementById('scoreCapex').textContent = `${(capexScore * 0.80).toFixed(1)}/100`;
@@ -1447,7 +1514,8 @@
                         jpy: components.jpy_usd || 159.20,
                         boj: components.boj_rate || 0.75,
                         tsmc: components.tsmc_yoy || 9.5,
-                        korea: components.korea_semicon_change || -1.5
+                        korea: components.korea_semicon_change || -1.5,
+                        hy_spread: components.hy_spread || 3.0
                     };
 
                     // ✅ capex_signals도 함께 저장 (Python 방식 통일)
