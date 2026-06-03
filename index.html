@@ -1062,58 +1062,40 @@
                 console.log("  엔강화: +20점");
             }
             
-            // 4️⃣ CAPEX 신호 점수 (대시보드 로컬 데이터 기반)
+            // 4️⃣ CAPEX 신호 점수 (data_sec_capex.json 기반 - Python과 동일)
             let capexScore = 0;
-            const gapData = JSON.parse(localStorage.getItem('gap_data') || '{}');
             
-            // CAPEX 신호를 간단히 추정 (gap_data의 괴리도 기반)
-            let criticalCount = 0;
-            let warningCount = 0;
-            let bullishCount = 0;
-            let bullishPlusCount = 0;
+            // data_sec_capex.json이 있으면 그것을 사용
+            // 없으면 gap_data 기반 추정
+            const capexSignals = savedMacroData?.capex_signals || 
+                                 JSON.parse(localStorage.getItem('capex_signals') || '{}');
             
-            // gap_data가 있으면 이를 기반으로 신호 판정
-            const gapQuarters = Object.keys(gapData).sort();
-            if (gapQuarters.length > 0) {
-                const latestQuarter = gapQuarters[gapQuarters.length - 1];
-                const latestGapData = gapData[latestQuarter];
+            if (capexSignals && Object.keys(capexSignals).length > 0) {
+                // Python과 동일한 로직
+                const criticalCnt = capexSignals.critical || 0;
+                const warningCnt = capexSignals.warning || 0;
+                const bullishCnt = capexSignals.bullish || 0;
+                const bullishPlusCnt = capexSignals.bullish_plus || 0;
                 
-                // 각 기업별 괴리도 기반 신호
-                Object.keys(latestGapData).forEach(company => {
-                    if (company !== 'weighted_average') {
-                        const gap = latestGapData[company];
-                        if (gap < -10) {
-                            criticalCount++;
-                        } else if (gap < -5) {
-                            warningCount++;
-                        } else if (gap > 100) {
-                            bullishPlusCount++;
-                        } else if (gap > 20) {
-                            bullishCount++;
-                        }
-                    }
-                });
-            }
-            
-            // CAPEX 신호에 따른 점수
-            if (criticalCount >= 3) {
-                capexScore = 60;
-            } else if (criticalCount >= 2) {
-                capexScore = 45;
-            } else if (criticalCount >= 1) {
-                capexScore = 30;
-            } else if (warningCount >= 3) {
-                capexScore = 20;
-            } else if (bullishPlusCount >= 2) {
-                capexScore = -40;
-            } else if (bullishPlusCount >= 1 && bullishCount >= 2) {
-                capexScore = -25;
-            } else if (bullishCount >= 4) {
-                capexScore = -20;
-            } else if (bullishCount >= 2) {
-                capexScore = -10;
-            } else {
-                capexScore = 0;
+                if (criticalCnt >= 3) {
+                    capexScore = 60;
+                } else if (criticalCnt >= 2) {
+                    capexScore = 45;
+                } else if (criticalCnt >= 1) {
+                    capexScore = 30;
+                } else if (warningCnt >= 3) {
+                    capexScore = 20;
+                } else if (bullishPlusCnt >= 2) {
+                    capexScore = -40;
+                } else if (bullishPlusCnt >= 1 && bullishCnt >= 2) {
+                    capexScore = -25;
+                } else if (bullishCnt >= 4) {
+                    capexScore = -20;
+                } else if (bullishCnt >= 2) {
+                    capexScore = -10;
+                } else {
+                    capexScore = 0;
+                }
             }
             
             score += capexScore;
