@@ -1501,6 +1501,17 @@
             capexAvg = capexCount > 0 ? (capexAvg / capexCount) : 0;
             
             // CAPEX 추세값 표시 (gap_data 기반)
+            const gapData = JSON.parse(localStorage.getItem('gap_data') || '{}');
+            const gapQuarters = Object.keys(gapData).sort();
+            let bigtech_capex_trend = 0;
+            
+            if (gapQuarters.length > 0) {
+                const latestQuarter = gapQuarters[gapQuarters.length - 1];
+                if (gapData[latestQuarter] && gapData[latestQuarter]['weighted_average'] !== undefined) {
+                    bigtech_capex_trend = gapData[latestQuarter]['weighted_average'];
+                }
+            }
+            
             const capexTrendText = bigtech_capex_trend !== 0 ? 
                 (bigtech_capex_trend > 0 ? '+' : '') + bigtech_capex_trend.toFixed(2) + '%' : 
                 '입력 대기중';
