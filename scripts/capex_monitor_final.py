@@ -290,65 +290,14 @@ class CapexMonitor:
             print(f"  → 반도체 점수: {chip_score}/100 × 12% = {chip_weighted:.1f}점")
 
             # ================================================================
-            # 3️⃣ CAPEX (0~100점 기준 → × 0.80 = 최대 80점)
+            # 3️⃣ CAPEX (0~100점 → × 0.80 = 최대 80점)
+            # 실제 계산은 대시보드에서 수동입력 기반으로 수행
+            # Python에서는 0으로 고정
             # ================================================================
+            capex_score = 0
+            capex_weighted = 0.0
+            print(f"  → CAPEX 점수: 대시보드에서 계산 (Python: 0점)")
 
-            # A. 괴리도 추세 (60%)
-            gap_avg = comp.get('bigtech_capex_trend', 0)
-            if gap_avg < -10:
-                gap_score = 100
-                print(f"  CAPEX 급감(괴리도 {gap_avg:.1f}%): 100점 🚨")
-            elif gap_avg < 0:
-                gap_score = 70
-                print(f"  CAPEX 위축(괴리도 {gap_avg:.1f}%): 70점")
-            elif gap_avg < 20:
-                gap_score = 25
-                print(f"  CAPEX 주의(괴리도 {gap_avg:.1f}%): 25점")
-            elif gap_avg < 50:
-                gap_score = 0
-                print(f"  CAPEX 중립(괴리도 {gap_avg:.1f}%): 0점")
-            elif gap_avg < 100:
-                gap_score = -20
-                print(f"  CAPEX Bullish(괴리도 {gap_avg:.1f}%): -20점")
-            elif gap_avg < 150:
-                gap_score = -35
-                print(f"  CAPEX 매우 Bullish(괴리도 {gap_avg:.1f}%): -35점")
-            else:
-                gap_score = 25
-                print(f"  CAPEX 버블 경보(괴리도 {gap_avg:.1f}%): +25점 ⚠️")
-
-            # B. CAPEX 신호 (40%)
-            capex_signals = comp.get('capex_signals', {})
-            critical_count = capex_signals.get('critical', 0)
-            warning_count = capex_signals.get('warning', 0)
-            bullish_count = capex_signals.get('bullish', 0)
-            bullish_plus_count = capex_signals.get('bullish_plus', 0)
-
-            if critical_count >= 3:
-                signal_score = 100
-            elif critical_count >= 2:
-                signal_score = 75
-            elif critical_count >= 1:
-                signal_score = 50
-            elif warning_count >= 3:
-                signal_score = 30
-            elif bullish_plus_count >= 2:
-                signal_score = -40
-            elif bullish_plus_count >= 1 and bullish_count >= 2:
-                signal_score = -25
-            elif bullish_count >= 4:
-                signal_score = -20
-            elif bullish_count >= 2:
-                signal_score = -10
-            else:
-                signal_score = 0
-
-            print(f"  신호(critical={critical_count}, bullish_plus={bullish_plus_count}): {signal_score}점")
-
-            capex_raw = gap_score * 0.6 + signal_score * 0.4
-            capex_score = min(max(capex_raw, 0), 100)
-            capex_weighted = capex_score * 0.80
-            print(f"  → CAPEX 점수: {capex_score:.1f}/100 × 80% = {capex_weighted:.1f}점")
 
             # ================================================================
             # 최종 합산
