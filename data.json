@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-07-03T18:15:50.831872+09:00",
+  "timestamp": "2026-07-04T17:34:49.517076+09:00",
   "risk_score": 4.4,
   "status": "NORMAL",
   "components": {
     "fed_rate": 3.63,
     "us_10y_yield": 4.48,
     "jpy_usd": 161.67,
-    "hy_spread": 2.74,
+    "hy_spread": 2.75,
     "boj_rate": 0.75,
     "tsmc_yoy": 19.13381338157982,
     "korea_semicon_exports": 2850000000,
