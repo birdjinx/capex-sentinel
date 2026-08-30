@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-29T21:18:14.215371+09:00",
+  "timestamp": "2026-08-30T20:16:48.667516+09:00",
   "risk_score": 2.6,
   "status": "NORMAL",
   "components": {
@@ -8,7 +8,7 @@
     "jpy_usd": 158.91,
     "hy_spread": 2.63,
     "boj_rate": 0.75,
-    "tsmc_yoy": NaN,
+    "tsmc_yoy": 0.007987728416356633,
     "korea_semicon_exports": 2850000000,
     "korea_semicon_change": -1.5,
     "capex_signals": {
