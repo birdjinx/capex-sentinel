@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-09-08T19:36:14.191142+09:00",
+  "timestamp": "2026-09-09T19:46:33.237220+09:00",
   "risk_score": 2.6,
   "status": "NORMAL",
   "components": {
     "fed_rate": 3.63,
-    "us_10y_yield": 4.77,
-    "jpy_usd": 159.97,
-    "hy_spread": 2.65,
+    "us_10y_yield": 4.78,
+    "jpy_usd": 156.11,
+    "hy_spread": 2.68,
     "boj_rate": 0.75,
-    "tsmc_yoy": 2.4859955854873075,
+    "tsmc_yoy": 1.9806606781944112,
     "korea_semicon_exports": 2850000000,
     "korea_semicon_change": -1.5,
     "capex_signals": {
