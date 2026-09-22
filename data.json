@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-09-21T21:01:54.482021+09:00",
-  "risk_score": 4.4,
+  "timestamp": "2026-09-22T19:59:17.628199+09:00",
+  "risk_score": 5.2,
   "status": "NORMAL",
   "components": {
     "fed_rate": 3.63,
-    "us_10y_yield": 4.94,
-    "jpy_usd": 153.71,
-    "hy_spread": 2.7,
+    "us_10y_yield": 5.01,
+    "jpy_usd": 156.87,
+    "hy_spread": 2.68,
     "boj_rate": 0.75,
-    "tsmc_yoy": -4.764839247065271,
+    "tsmc_yoy": -3.193504230578,
     "korea_semicon_exports": 2850000000,
     "korea_semicon_change": -1.5,
     "capex_signals": {
@@ -19,7 +19,7 @@
       "bullish_plus": 0
     },
     "score_breakdown": {
-      "macro": 0.8,
+      "macro": 1.6,
       "chip": 3.6,
       "capex": 0.0
     }
