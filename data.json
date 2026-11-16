@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-11-15T22:27:09.958518+09:00",
-  "risk_score": 5.2,
+  "timestamp": "2026-11-16T23:49:23.149325+09:00",
+  "risk_score": 7.0,
   "status": "NORMAL",
   "components": {
     "fed_rate": 3.88,
@@ -8,7 +8,7 @@
     "jpy_usd": 158.23,
     "hy_spread": 3.2,
     "boj_rate": 0.75,
-    "tsmc_yoy": -4.359146295862748,
+    "tsmc_yoy": -7.950326183711283,
     "korea_semicon_exports": 2850000000,
     "korea_semicon_change": -1.5,
     "capex_signals": {
@@ -20,7 +20,7 @@
     },
     "score_breakdown": {
       "macro": 1.6,
-      "chip": 3.6,
+      "chip": 5.4,
       "capex": 0.0
     }
   },
